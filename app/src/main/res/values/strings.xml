@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">WoR</string>
+    <string name="cameraDisableSwitch">カメラ機能</string>
+    <string name="cameraDisable">無効</string>
+    <string name="cameraEnable">有効</string>
+    <string name="beforeDisable">前回無効化時刻</string>
+    <string name="lastStartTime">前回起動時刻</string>
+    <string name="nextStartTime">次回起動時刻</string>
+    <string name="dateAndTime">2017/06/11 00:00 SUN</string>
+    <string name="time">00:00</string>
+</resources>
