@@ -34,6 +34,12 @@ public class MainActivity extends AppCompatActivity {
         tCameraActive = devicePolicyManager.isAdminActive(tCameraReceiver);
 
         Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
+        if (devicePolicyManager.getCameraDisabled(tCameraReceiver)) {
+            directSwitch.setChecked(true);
+        } else {
+            directSwitch.setChecked(false);
+        }
+
         directSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked ) {
