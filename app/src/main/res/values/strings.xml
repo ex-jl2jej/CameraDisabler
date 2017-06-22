@@ -9,4 +9,5 @@
     <string name="nextStartTime">次回起動時刻</string>
     <string name="dateAndTime">2017/06/11 00:00 SUN</string>
     <string name="time">00:00</string>
+    <string name="settingFileName">setting.txt</string>
 </resources>
