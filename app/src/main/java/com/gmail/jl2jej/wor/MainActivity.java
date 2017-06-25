@@ -20,21 +20,24 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.text.ParseException;
-import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static android.text.format.DateUtils.*;
+import static java.util.Calendar.DATE;
+import static java.util.Calendar.HOUR;
+import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.MONTH;
+import static java.util.Calendar.SECOND;
+import static java.util.Calendar.YEAR;
 
 class Timer {
     public Boolean available;
     public Boolean cameraDisable;
     public String timeInDay;
-    public Date beforeStart;
-    public Date afterStart;
+    public Calendar beforeStart;
+    public Calendar afterStart;
 }
 
 @RequiresApi(api = Build.VERSION_CODES.N)
@@ -45,29 +48,66 @@ public class MainActivity extends AppCompatActivity {
     ComponentName tCameraReceiver;
     Boolean tCameraActive;
 
-    private Date timeBeforeDisable;
-    private Date timeBeforeEnable;
-    private final Integer timerStartIndex = 1;
-    private final Integer timerEndIndex = 3;
-    private final Integer dateChange = 0;
+    private Calendar timeBeforeDisable = Calendar.getInstance();
+    private Calendar timeBeforeEnable = Calendar.getInstance();
+    private final int timerStartIndex = 1;
+    private final int timerEndIndex = 3;
+    private final int dateChange = 0;
     private Timer timer[] = new Timer[timerEndIndex+1];
-    private final String initialDateString = "1970/01/01 09:00:00";
-    private final CharSequence dateFormat = "yyyy/MM/dd hh:mm:ss";
+    private final String INITIAL_TIME = "00:00";
+    // 日付の初期値
+    private final int INIT_YEAR = 1970;
+    private final int INIT_MONTH = 1;
+    private final int INIT_DAY = 1;
+    private final int INIT_HOUR = 9;
+    private final int INIT_MIN = 0;
+    private final int INIT_SEC = 0;
+    //出てくる順番
+    private final int YEAR_POS = 1;
+    private final int MONTH_POS = 2;
+    private final int DATE_POS = 3;
+    private final int HOUR_POS = 4;
+    private final int MIN_POS = 5;
+    private final int SEC_POS = 6;
+
+    protected Calendar parseDateString(String str) {
+        Calendar date = Calendar.getInstance();
+        String regex = "(\\d+)/(\\d+)/(\\d+)\\s+(\\d+):(\\d+):(\\d+)$";
+        Pattern ptn = Pattern.compile(regex);
+
+        Matcher m = ptn.matcher(str);
+        if (m.find()) {
+            int year = Integer.parseInt(m.group(YEAR_POS));
+            int month = Integer.parseInt(m.group(MONTH_POS));
+            int day = Integer.parseInt(m.group(DATE_POS));
+
+            int hour = Integer.parseInt(m.group(HOUR_POS));
+            int min = Integer.parseInt(m.group(MIN_POS));
+            int sec = Integer.parseInt(m.group(SEC_POS));
+            date.set(year, month,day,hour,min,sec);
+        } else {
+            throw new IllegalArgumentException(MessageFormat.format("日付の形式がおかしい {0}", str.toString()));
+        }
+        return date;
+    }
+
+    protected String dateToString(Calendar date)  {
+        String str = String.format("%04d/%02d/%02d %02d:%02d:%02d", date.get(YEAR), date.get(MONTH), date.get(DATE), date.get(HOUR), date.get(MINUTE), date.get(SECOND));
+
+        return str;
+    }
 
     protected Boolean readSettingFile() {
         BufferedReader reader = null;
         Boolean doRewriteFile = false;
-        Date initialDate;
-        try {
-            initialDate = DateFormat.getDateInstance().parse(initialDateString);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            initialDate = null;
-            System.exit(1);
-        }
 
         for (int i = 0 ; i <= timerEndIndex ; i++) {
             timer[i] = new Timer();
+            timer[i].available = false;
+            timer[i].cameraDisable = true;
+            timer[i].timeInDay = new String(INITIAL_TIME);
+            timer[i].beforeStart = Calendar.getInstance();
+            timer[i].afterStart = Calendar.getInstance();
         }
 
         try {
@@ -76,27 +116,27 @@ public class MainActivity extends AppCompatActivity {
 
             if((line = reader.readLine()) != null) {
                 try {
-                    timeBeforeDisable = DateFormat.getDateInstance().parse(line);
-                } catch (ParseException e) {
-                    timeBeforeDisable = initialDate;
+                    timeBeforeDisable = parseDateString(line);
+                } catch(IllegalArgumentException e) {
+                    timeBeforeDisable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                     doRewriteFile = true;
                 }
             } else {
-                timeBeforeDisable = initialDate;
+                timeBeforeDisable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                 doRewriteFile = true;
             }
             if((line = reader.readLine()) != null) {
                 try {
-                    timeBeforeEnable = DateFormat.getDateInstance().parse(line);
-                } catch (ParseException e) {
-                    timeBeforeEnable = initialDate;
+                    timeBeforeEnable = parseDateString(line);
+                } catch (IllegalArgumentException e) {
+                    timeBeforeEnable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                     doRewriteFile = true;
                 }
             } else {
-                timeBeforeEnable = initialDate;
+                timeBeforeEnable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                 doRewriteFile = true;
             }
-            for (int i = 1 ; i <= timerEndIndex ; i++) {
+            for (int i = timerStartIndex ; i <= timerEndIndex ; i++) {
                 if ((line = reader.readLine()) != null) {
                     String regex = "(true|false) (disable|enable) (\\d\\d):(\\d\\d)$";
                     Pattern ptn = Pattern.compile(regex);
@@ -113,8 +153,8 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             timer[i].cameraDisable = false;
                         }
-                        Integer h = Integer.parseInt(m.group(3));
-                        Integer min = Integer.parseInt(m.group(4));
+                        int h = Integer.parseInt(m.group(3));
+                        int min = Integer.parseInt(m.group(4));
                         if (h >= 0 && h <= 23 && min >= 0 && min <= 59) {
                             timer[i].timeInDay = m.group(3) + ":" + m.group(4);
                         } else {
@@ -135,65 +175,65 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if ((line = reader.readLine()) != null) {
                     try {
-                        timer[i].beforeStart = DateFormat.getDateInstance().parse(line);
-                    } catch (ParseException e) {
-                        timer[i].beforeStart = initialDate;
+                        timer[i].beforeStart = parseDateString(line);
+                    } catch (IllegalArgumentException e) {
+                        timer[i].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                         doRewriteFile = true;
                     }
                 } else {
-                    timer[i].beforeStart = initialDate;
+                    timer[i].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                     doRewriteFile = true;
                 }
 
                 if ((line = reader.readLine()) != null) {
                     try {
-                        timer[i].afterStart = DateFormat.getDateInstance().parse(line);
-                    } catch (ParseException e) {
-                        timer[i].afterStart = initialDate;
+                        timer[i].afterStart = parseDateString(line);
+                    } catch (IllegalArgumentException e) {
+                        timer[i].afterStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                         doRewriteFile = true;
                     }
                 } else {
-                    timer[i].afterStart = initialDate;
+                    timer[i].afterStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                     doRewriteFile = true;
                 }
 
             }
             if ((line = reader.readLine()) != null) {
                 if( line.equals("true")) {
-                    timer[0].available = true;
+                    timer[dateChange].available = true;
                 } else if (line.equals("false")) {
-                    timer[0].available = false;
+                    timer[dateChange].available = false;
                 } else {
-                    timer[0].available = false;
+                    timer[dateChange].available = false;
                     doRewriteFile = true;
                 }
             } else {
-                timer[0].available = false;
+                timer[dateChange].available = false;
                 doRewriteFile = true;
             }
             if ((line = reader.readLine()) != null) {
                 try {
-                    timer[0].beforeStart = DateFormat.getDateInstance().parse(line);
-                } catch (ParseException e) {
-                    timer[0].beforeStart = initialDate;
+                    timer[dateChange].beforeStart = parseDateString(line);
+                } catch (IllegalArgumentException e) {
+                    timer[dateChange].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                     doRewriteFile = true;
                 }
             } else {
-                timer[0].beforeStart = initialDate;
+                timer[dateChange].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                 doRewriteFile = true;
             }
         } catch (IOException e) {
-            timeBeforeDisable = initialDate;
-            timeBeforeEnable = initialDate;
-            for (int i = 1 ; i <= timerEndIndex ; i++) {
+            timeBeforeDisable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+            timeBeforeEnable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+            for (int i = timerStartIndex ; i <= timerEndIndex ; i++) {
                 timer[i].available = false;
                 timer[i].cameraDisable = true;
                 timer[i].timeInDay = "00:00";
-                timer[i].beforeStart = initialDate;
-                timer[i].afterStart = initialDate;
+                timer[i].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+                timer[i].afterStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
             }
-            timer[0].available = false;
-            timer[0].beforeStart = initialDate;
+            timer[dateChange].available = false;
+            timer[dateChange].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
             doRewriteFile = true;
         } finally {
             try {
@@ -212,9 +252,9 @@ public class MainActivity extends AppCompatActivity {
         try {
             String newLine = System.getProperty("line.separator");
             writer = new BufferedWriter(new OutputStreamWriter(openFileOutput(settingFileName, Context.MODE_PRIVATE)));
-            writer.write(android.text.format.DateFormat.format(dateFormat, timeBeforeDisable) + newLine);
-            writer.write(android.text.format.DateFormat.format(dateFormat, timeBeforeEnable) + newLine);
-            for (int i = 1 ; i <= timerEndIndex ; i++ ) {
+            writer.write(dateToString(timeBeforeDisable) + newLine);
+            writer.write(dateToString(timeBeforeEnable) + newLine);
+            for (int i = timerStartIndex ; i <= timerEndIndex ; i++ ) {
                 if (timer[i].available) {
                     writer.write("true ");
                 } else {
@@ -226,15 +266,15 @@ public class MainActivity extends AppCompatActivity {
                     writer.write("enable ");
                 }
                 writer.write(timer[i].timeInDay + newLine);
-                writer.write(android.text.format.DateFormat.format(dateFormat, timer[i].beforeStart) + newLine);
-                writer.write(android.text.format.DateFormat.format(dateFormat, timer[i].afterStart) + newLine);
+                writer.write(dateToString(timer[i].beforeStart) + newLine);
+                writer.write(dateToString(timer[i].afterStart) + newLine);
             }
-            if (timer[0].available) {
+            if (timer[dateChange].available) {
                 writer.write("true" + newLine);
             } else {
                 writer.write("false" + newLine);
             }
-            writer.write(android.text.format.DateFormat.format(dateFormat, timer[0].beforeStart) + newLine);
+            writer.write(dateToString(timer[dateChange].beforeStart) + newLine);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -274,10 +314,17 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked ) {
                 if (isChecked) {
                     devicePolicyManager.setCameraDisabled(tCameraReceiver, true);
-                    timeBeforeDisable = Date(System.currentTimeMillis());
+                    timeBeforeDisable = Calendar.getInstance();
+                    TextView textBeforeDisable = (TextView)findViewById(R.id.textBeforeDisable);
+                    textBeforeDisable.setText(dateToString(timeBeforeDisable));
+                    rewriteSettingFile();
                     Log.i(TAG, "true");
                 } else {
                     devicePolicyManager.setCameraDisabled(tCameraReceiver, false);
+                    timeBeforeEnable = Calendar.getInstance();
+                    TextView textBeforeEnable = (TextView)findViewById(R.id.textBeforeEnable);
+                    textBeforeEnable.setText(dateToString(timeBeforeEnable));
+                    rewriteSettingFile();
                     Log.i(TAG, "false");
                 }
             }});
@@ -298,10 +345,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         TextView textBeforeDisable = (TextView)findViewById(R.id.textBeforeDisable);
-        textBeforeDisable.setText(android.text.format.DateFormat.format(dateFormat, timeBeforeDisable));
+        textBeforeDisable.setText(dateToString(timeBeforeDisable));
 
         TextView textBeforeEnable = (TextView)findViewById(R.id.textBeforeEnable);
-        textBeforeEnable.setText(android.text.format.DateFormat.format(dateFormat, timeBeforeEnable));
+        textBeforeEnable.setText(dateToString(timeBeforeEnable));
 
         TextView textTimer1 = (TextView)findViewById(R.id.textTimer1);
         textTimer1.setText(timer[1].timeInDay);
