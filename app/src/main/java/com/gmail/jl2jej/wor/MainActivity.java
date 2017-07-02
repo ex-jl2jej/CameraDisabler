@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
         Matcher m = ptn.matcher(str);
         if (m.find()) {
             int year = Integer.parseInt(m.group(YEAR_POS));
-            int month = Integer.parseInt(m.group(MONTH_POS));
+            int month = Integer.parseInt(m.group(MONTH_POS))-1;
             int day = Integer.parseInt(m.group(DATE_POS));
 
             int hour = Integer.parseInt(m.group(HOUR_POS));
@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected String dateToString(Calendar date)  {
-        String str = String.format("%04d/%02d/%02d %02d:%02d:%02d", date.get(YEAR), date.get(MONTH), date.get(DATE), date.get(HOUR), date.get(MINUTE), date.get(SECOND));
+        String str = String.format("%04d/%02d/%02d %02d:%02d:%02d", date.get(YEAR), date.get(MONTH)+1, date.get(DATE), date.get(HOUR), date.get(MINUTE), date.get(SECOND));
 
         return str;
     }
@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
                 timeBeforeEnable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                 doRewriteFile = true;
             }
-            for (int i = timerStartIndex ; i <= timerEndIndex ; i++) {
+            for (int i = 0 ; i <= timerEndIndex ; i++) {
                 if ((line = reader.readLine()) != null) {
                     String regex = "(true|false) (disable|enable) (\\d\\d):(\\d\\d)$";
                     Pattern ptn = Pattern.compile(regex);
@@ -202,42 +202,29 @@ public class MainActivity extends AppCompatActivity {
                 }
 
             }
-            if ((line = reader.readLine()) != null) {
-                if( line.equals("true")) {
-                    timer[dateChange].available = true;
-                } else if (line.equals("false")) {
-                    timer[dateChange].available = false;
-                } else {
-                    timer[dateChange].available = false;
-                    doRewriteFile = true;
-                }
-            } else {
-                timer[dateChange].available = false;
-                doRewriteFile = true;
-            }
+
             if ((line = reader.readLine()) != null) {
                 try {
-                    timer[dateChange].beforeStart = parseDateString(line);
+                    timerHolidayModeOn = parseDateString(line);
                 } catch (IllegalArgumentException e) {
-                    timer[dateChange].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+                    timeHolidayModeOn.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                     doRewriteFile = true;
                 }
             } else {
-                timer[dateChange].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+                timerHolidayModeOn.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                 doRewriteFile = true;
             }
         } catch (IOException e) {
             timeBeforeDisable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
             timeBeforeEnable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
-            for (int i = timerStartIndex ; i <= timerEndIndex ; i++) {
+            for (int i = 0 ; i <= timerEndIndex ; i++) {
                 timer[i].available = false;
                 timer[i].cameraDisable = true;
                 timer[i].timeInDay = "00:00";
                 timer[i].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                 timer[i].afterStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
             }
-            timer[dateChange].available = false;
-            timer[dateChange].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+            timerHolidayModeOn.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
             doRewriteFile = true;
         } finally {
             try {
@@ -258,7 +245,7 @@ public class MainActivity extends AppCompatActivity {
             writer = new BufferedWriter(new OutputStreamWriter(openFileOutput(settingFileName, Context.MODE_PRIVATE)));
             writer.write(dateToString(timeBeforeDisable) + newLine);
             writer.write(dateToString(timeBeforeEnable) + newLine);
-            for (int i = timerStartIndex ; i <= timerEndIndex ; i++ ) {
+            for (int i = 0 ; i <= timerEndIndex ; i++ ) {
                 if (timer[i].available) {
                     writer.write("true ");
                 } else {
@@ -273,12 +260,7 @@ public class MainActivity extends AppCompatActivity {
                 writer.write(dateToString(timer[i].beforeStart) + newLine);
                 writer.write(dateToString(timer[i].afterStart) + newLine);
             }
-            if (timer[dateChange].available) {
-                writer.write("true" + newLine);
-            } else {
-                writer.write("false" + newLine);
-            }
-            writer.write(dateToString(timer[dateChange].beforeStart) + newLine);
+            writer.write(dateToString(timeHolidayModeOn) + newLine);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -387,6 +369,7 @@ public class MainActivity extends AppCompatActivity {
                             timeHolidayModeOn = Calendar.getInstance();
                         }
                         rewriteSettingFile();
+                        rewriteView();
                     }
                 }
         );
@@ -422,7 +405,8 @@ public class MainActivity extends AppCompatActivity {
         ((CheckBox)findViewById(R.id.checkBoxTimer2)).setChecked(timer[2].available);
         ((CheckBox)findViewById(R.id.checkBoxTimer3)).setChecked(timer[3].available);
 
-
+        ((CheckBox)findViewById(R.id.checkBoxHolidayMode)).setChecked(timer[dateChange].available);
+        ((TextView)findViewById(R.id.textHolidayOnTime)).setText(dateToString(timeHolidayModeOn));
 
     }
 
