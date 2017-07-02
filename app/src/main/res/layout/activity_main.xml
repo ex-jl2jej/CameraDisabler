@@ -1,304 +1,329 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context="com.gmail.jl2jej.wor.MainActivity">
-
-    <Switch
-        android:id="@+id/directSwitch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:showText="true"
-        android:text="@string/cameraDisableSwitch"
-        android:textOff="@string/cameraEnable"
-        android:textOn="@string/cameraDisable" />
-
-    <LinearLayout
+    android:layout_height="match_parent">
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/labelBeforeDisable"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/beforeDisable" />
-
-        <TextView
-            android:id="@+id/textBeforeDisable"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/dateAndTime" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/labelBeforeEnable"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/beforeEnable" />
-
-        <TextView
-            android:id="@+id/textBeforeEnable"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/dateAndTime" />
-
-    </LinearLayout>
-    <!-- timer 1 -->
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/timerVerticalMargin"
-        android:orientation="horizontal">
-
-        <CheckBox
-            android:id="@+id/checkBoxTimer1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="timer 1" />
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        tools:context="com.gmail.jl2jej.wor.MainActivity">
 
         <Switch
-            android:id="@+id/changeSwitch1"
+            android:id="@+id/directSwitch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:showText="true"
             android:text="@string/cameraDisableSwitch"
             android:textOff="@string/cameraEnable"
-            android:textOn="@string/cameraDisable"
-            android:layout_weight="0"
-            android:layout_marginLeft="@dimen/timerHorizontalMargin"/>
+            android:textOn="@string/cameraDisable" />
 
-        <TextView
-            android:id="@+id/textTimer1"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/timerHorizontalMargin"
-            android:text="@string/time"
-            android:textSize="@dimen/timerFontSize" />
-    </LinearLayout>
+            android:orientation="horizontal">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+            <TextView
+                android:id="@+id/labelBeforeDisable"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/beforeDisable" />
 
-        <TextView
-            android:id="@+id/labelBeforeTimer1"
-            android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/textBeforeDisable"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dateAndTime" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/lastStartTime" />
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/textBeforeTimer1"
-            android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/labelBeforeEnable"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/beforeEnable" />
+
+            <TextView
+                android:id="@+id/textBeforeEnable"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dateAndTime" />
+
+        </LinearLayout>
+        <!-- timer 1 -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/dateAndTime" />
+            android:layout_marginTop="@dimen/timerVerticalMargin"
+            android:orientation="horizontal">
 
+            <CheckBox
+                android:id="@+id/checkBoxTimer1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="timer 1" />
 
+            <Switch
+                android:id="@+id/changeSwitch1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:showText="true"
+                android:text="@string/cameraDisableSwitch"
+                android:textOff="@string/cameraEnable"
+                android:textOn="@string/cameraDisable"
+                android:layout_weight="0"
+                android:layout_marginLeft="@dimen/timerHorizontalMargin"/>
 
-    </LinearLayout>
+            <TextView
+                android:id="@+id/textTimer1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/timerHorizontalMargin"
+                android:text="@string/time"
+                android:textSize="@dimen/timerFontSize" />
+        </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/labelAfterTimer1"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/nextStartTime" />
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/textAfterTimer1"
-            android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/labelBeforeTimer1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/lastStartTime" />
+
+            <TextView
+                android:id="@+id/textBeforeTimer1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dateAndTime" />
+
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/dateAndTime" />
+            android:orientation="horizontal">
 
-    </LinearLayout>
+            <TextView
+                android:id="@+id/labelAfterTimer1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/nextStartTime" />
 
-    <!-- timer 2 -->
+            <TextView
+                android:id="@+id/textAfterTimer1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dateAndTime" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/timerVerticalMargin"
-        android:orientation="horizontal">
+        </LinearLayout>
+
+        <!-- timer 2 -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/timerVerticalMargin"
+            android:orientation="horizontal">
+
+            <CheckBox
+                android:id="@+id/checkBoxTimer2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="timer 2" />
+
+            <Switch
+                android:id="@+id/changeSwitch2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:showText="true"
+                android:text="@string/cameraDisableSwitch"
+                android:textOff="@string/cameraEnable"
+                android:textOn="@string/cameraDisable"
+                android:layout_weight="0"
+                android:layout_marginLeft="@dimen/timerHorizontalMargin"/>
+
+            <TextView
+                android:id="@+id/textTimer2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/timerHorizontalMargin"
+                android:text="@string/time"
+                android:textSize="@dimen/timerFontSize" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/labelBeforeTimer2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/lastStartTime" />
+
+            <TextView
+                android:id="@+id/textBeforeTimer2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dateAndTime" />
+
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/labelAfterTimer2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/nextStartTime" />
+
+            <TextView
+                android:id="@+id/textAfterTimer2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dateAndTime" />
+
+        </LinearLayout>
+
+        <!-- timer 3 -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/timerVerticalMargin"
+            android:orientation="horizontal">
+
+            <CheckBox
+                android:id="@+id/checkBoxTimer3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="timer 3" />
+
+            <Switch
+                android:id="@+id/changeSwitch3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:showText="true"
+                android:text="@string/cameraDisableSwitch"
+                android:textOff="@string/cameraEnable"
+                android:textOn="@string/cameraDisable"
+                android:layout_weight="0"
+                android:layout_marginLeft="@dimen/timerHorizontalMargin"/>
+
+            <TextView
+                android:id="@+id/textTimer3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/timerHorizontalMargin"
+                android:text="@string/time"
+                android:textSize="@dimen/timerFontSize" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/labelBeforeTimer3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/lastStartTime" />
+
+            <TextView
+                android:id="@+id/textBeforeTimer3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dateAndTime" />
+
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/labelAfterTimer3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/nextStartTime" />
+
+            <TextView
+                android:id="@+id/textAfterTimer3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dateAndTime" />
+
+        </LinearLayout>
+
+        <!-- holiday mode -->
 
         <CheckBox
-            android:id="@+id/checkBoxTimer2"
+            android:id="@+id/checkBoxHolidayMode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="timer 2" />
+            android:layout_marginTop="@dimen/holidayMargin"
+            android:text="今日はカメラを無効にしない" />
 
-        <Switch
-            android:id="@+id/changeSwitch2"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:showText="true"
-            android:text="@string/cameraDisableSwitch"
-            android:textOff="@string/cameraEnable"
-            android:textOn="@string/cameraDisable"
-            android:layout_weight="0"
-            android:layout_marginLeft="@dimen/timerHorizontalMargin"/>
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/textTimer2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/timerHorizontalMargin"
-            android:text="@string/time"
-            android:textSize="@dimen/timerFontSize" />
+            <TextView
+                android:id="@+id/labelHolidayOnTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/holidayOnTime" />
+
+            <TextView
+                android:id="@+id/textHolidayOnTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/dateAndTime" />
+
+        </LinearLayout>
 
     </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/labelBeforeTimer2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/lastStartTime" />
-
-        <TextView
-            android:id="@+id/textBeforeTimer2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/dateAndTime" />
-
-
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/labelAfterTimer2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/nextStartTime" />
-
-        <TextView
-            android:id="@+id/textAfterTimer2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/dateAndTime" />
-
-    </LinearLayout>
-
-    <!-- timer 3 -->
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/timerVerticalMargin"
-        android:orientation="horizontal">
-
-        <CheckBox
-            android:id="@+id/checkBoxTimer3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="timer 3" />
-
-        <Switch
-            android:id="@+id/changeSwitch3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:showText="true"
-            android:text="@string/cameraDisableSwitch"
-            android:textOff="@string/cameraEnable"
-            android:textOn="@string/cameraDisable"
-            android:layout_weight="0"
-            android:layout_marginLeft="@dimen/timerHorizontalMargin"/>
-
-        <TextView
-            android:id="@+id/textTimer3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/timerHorizontalMargin"
-            android:text="@string/time"
-            android:textSize="@dimen/timerFontSize" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/labelBeforeTimer3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/lastStartTime" />
-
-        <TextView
-            android:id="@+id/textBeforeTimer3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/dateAndTime" />
-
-
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/labelAfterTimer3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/nextStartTime" />
-
-        <TextView
-            android:id="@+id/textAfterTimer3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/dateAndTime" />
-
-    </LinearLayout>
-
-    <!-- holiday mode -->
-
-    <CheckBox
-        android:id="@+id/checkBoxHolidayMode"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/holidayMargin"
-        android:text="今日はカメラを無効にしない" />
-
-</LinearLayout>
+</ScrollView>

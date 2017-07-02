@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">WoR</string>
+    <string name="app_name">CameraDisabler</string>
     <string name="cameraDisableSwitch">カメラ機能</string>
     <string name="cameraDisable">無効</string>
     <string name="cameraEnable">有効</string>
@@ -10,4 +10,5 @@
     <string name="dateAndTime">2017/06/11 00:00 SUN</string>
     <string name="time">00:00</string>
     <string name="settingFileName">setting.txt</string>
+    <string name="holidayOnTime">前回ONにした時刻</string>
 </resources>

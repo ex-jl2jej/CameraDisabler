@@ -6,10 +6,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.content.ComponentName;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.util.Log;
@@ -50,10 +52,12 @@ public class MainActivity extends AppCompatActivity {
 
     private Calendar timeBeforeDisable = Calendar.getInstance();
     private Calendar timeBeforeEnable = Calendar.getInstance();
+    private Calendar timeHolidayModeOn = Calendar.getInstance();
     private final int timerStartIndex = 1;
     private final int timerEndIndex = 3;
     private final int dateChange = 0;
     private Timer timer[] = new Timer[timerEndIndex+1];
+    private Calendar timerHolidayModeOn = Calendar.getInstance();
     private final String INITIAL_TIME = "00:00";
     // 日付の初期値
     private final int INIT_YEAR = 1970;
@@ -86,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
             int sec = Integer.parseInt(m.group(SEC_POS));
             date.set(year, month,day,hour,min,sec);
         } else {
-            throw new IllegalArgumentException(MessageFormat.format("日付の形式がおかしい {0}", str.toString()));
+            throw new IllegalArgumentException(MessageFormat.format("日付の形式がおかしい {0}", str));
         }
         return date;
     }
@@ -105,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
             timer[i] = new Timer();
             timer[i].available = false;
             timer[i].cameraDisable = true;
-            timer[i].timeInDay = new String(INITIAL_TIME);
+            timer[i].timeInDay = INITIAL_TIME;
             timer[i].beforeStart = Calendar.getInstance();
             timer[i].afterStart = Calendar.getInstance();
         }
@@ -329,12 +333,64 @@ public class MainActivity extends AppCompatActivity {
                 }
             }});
 
+
         if ( readSettingFile() ) {
             rewriteSettingFile();
         }
 
         rewriteView();
-     }
+
+        final CheckBox cbTimer1 = (CheckBox)findViewById(R.id.checkBoxTimer1);
+        cbTimer1.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                        cbTimer1.setChecked(isChecked);
+                        timer[1].available = isChecked;
+                        rewriteSettingFile();
+                    }
+                }
+        );
+
+        final CheckBox cbTimer2 = (CheckBox)findViewById(R.id.checkBoxTimer2);
+        cbTimer2.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                        cbTimer2.setChecked(isChecked);
+                        timer[2].available = isChecked;
+                        rewriteSettingFile();
+                    }
+                }
+        );
+
+        final CheckBox cbTimer3 = (CheckBox)findViewById(R.id.checkBoxTimer3);
+        cbTimer3.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                        cbTimer3.setChecked(isChecked);
+                        timer[3].available = isChecked;
+                        rewriteSettingFile();
+                    }
+                }
+        );
+
+        final CheckBox cbHolidayMode = (CheckBox)findViewById(R.id.checkBoxHolidayMode);
+        cbHolidayMode.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                        cbHolidayMode.setChecked(isChecked);
+                        timer[dateChange].available = isChecked;
+                        if (isChecked) {
+                            timeHolidayModeOn = Calendar.getInstance();
+                        }
+                        rewriteSettingFile();
+                    }
+                }
+        );
+    }
 
     protected void rewriteView() {
         Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
@@ -350,8 +406,24 @@ public class MainActivity extends AppCompatActivity {
         TextView textBeforeEnable = (TextView)findViewById(R.id.textBeforeEnable);
         textBeforeEnable.setText(dateToString(timeBeforeEnable));
 
-        TextView textTimer1 = (TextView)findViewById(R.id.textTimer1);
-        textTimer1.setText(timer[1].timeInDay);
+        ((TextView)findViewById(R.id.textTimer1)).setText(timer[1].timeInDay);
+        ((TextView)findViewById(R.id.textTimer2)).setText(timer[2].timeInDay);
+        ((TextView)findViewById(R.id.textTimer3)).setText(timer[3].timeInDay);
+
+        ((TextView)findViewById(R.id.textBeforeTimer1)).setText(dateToString(timer[1].beforeStart));
+        ((TextView)findViewById(R.id.textBeforeTimer2)).setText(dateToString(timer[2].beforeStart));
+        ((TextView)findViewById(R.id.textBeforeTimer3)).setText(dateToString(timer[3].beforeStart));
+
+        ((TextView)findViewById(R.id.textAfterTimer1)).setText(dateToString(timer[1].afterStart));
+        ((TextView)findViewById(R.id.textAfterTimer2)).setText(dateToString(timer[2].afterStart));
+        ((TextView)findViewById(R.id.textAfterTimer3)).setText(dateToString(timer[3].afterStart));
+
+        ((CheckBox)findViewById(R.id.checkBoxTimer1)).setChecked(timer[1].available);
+        ((CheckBox)findViewById(R.id.checkBoxTimer2)).setChecked(timer[2].available);
+        ((CheckBox)findViewById(R.id.checkBoxTimer3)).setChecked(timer[3].available);
+
+
+
     }
 
     @Override
