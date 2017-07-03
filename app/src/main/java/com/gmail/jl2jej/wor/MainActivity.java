@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected String dateToString(Calendar date)  {
-        String str = String.format("%04d/%02d/%02d %02d:%02d:%02d", date.get(YEAR), date.get(MONTH)+1, date.get(DATE), date.get(HOUR), date.get(MINUTE), date.get(SECOND));
+        String str = String.format("%04d/%02d/%02d %02d:%02d:%02d", date.get(YEAR), date.get(MONTH)+1, date.get(Calendar.DAY_OF_MONTH), date.get(Calendar.HOUR_OF_DAY), date.get(MINUTE), date.get(SECOND));
 
         return str;
     }
@@ -404,6 +404,10 @@ public class MainActivity extends AppCompatActivity {
         ((CheckBox)findViewById(R.id.checkBoxTimer1)).setChecked(timer[1].available);
         ((CheckBox)findViewById(R.id.checkBoxTimer2)).setChecked(timer[2].available);
         ((CheckBox)findViewById(R.id.checkBoxTimer3)).setChecked(timer[3].available);
+
+        ((Switch)findViewById(R.id.changeSwitch1)).setChecked(timer[1].cameraDisable);
+        ((Switch)findViewById(R.id.changeSwitch2)).setChecked(timer[2].cameraDisable);
+        ((Switch)findViewById(R.id.changeSwitch3)).setChecked(timer[3].cameraDisable);
 
         ((CheckBox)findViewById(R.id.checkBoxHolidayMode)).setChecked(timer[dateChange].available);
         ((TextView)findViewById(R.id.textHolidayOnTime)).setText(dateToString(timeHolidayModeOn));
