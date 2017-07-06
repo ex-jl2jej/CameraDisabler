@@ -7,7 +7,7 @@ import android.content.Intent;
  * Created by kido on 2017/06/05.
  */
 
-public class cameraReceiver extends DeviceAdminReceiver {
+public class CameraReceiver extends DeviceAdminReceiver {
     @Override
     public void onEnabled(Context context, Intent intent) {
         //
