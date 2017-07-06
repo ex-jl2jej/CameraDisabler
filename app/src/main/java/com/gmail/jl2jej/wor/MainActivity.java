@@ -1,6 +1,7 @@
 package com.gmail.jl2jej.wor;
 
 import android.app.Activity;
+import android.app.TimePickerDialog;
 import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.Intent;
@@ -16,6 +17,7 @@ import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.util.Log;
 import android.widget.TextView;
+import android.widget.TimePicker;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -38,8 +40,29 @@ class Timer {
     public Boolean available;
     public Boolean cameraDisable;
     public String timeInDay;
+    public int hourOfDay;
+    public int min;
     public Calendar beforeStart;
     public Calendar afterStart;
+
+    public void str2int() {
+        String regex = "(\\d\\d):(\\d\\d)$";
+        Pattern ptn = Pattern.compile(regex);
+
+        Matcher m = ptn.matcher(this.timeInDay);
+        if (m.find()) {
+            this.hourOfDay = Integer.parseInt(m.group(1));
+            this.min = Integer.parseInt(m.group(2));
+        } else {
+            this.hourOfDay = 0;
+            this.min = 0;
+            this.timeInDay = "00:00";
+        }
+    }
+
+    public void int2str() {
+        this.timeInDay = String.format("%02d:%02d", this.hourOfDay, this.min);
+    }
 }
 
 @RequiresApi(api = Build.VERSION_CODES.N)
@@ -110,6 +133,7 @@ public class MainActivity extends AppCompatActivity {
             timer[i].available = false;
             timer[i].cameraDisable = true;
             timer[i].timeInDay = INITIAL_TIME;
+            timer[i].str2int();
             timer[i].beforeStart = Calendar.getInstance();
             timer[i].afterStart = Calendar.getInstance();
         }
@@ -160,21 +184,26 @@ public class MainActivity extends AppCompatActivity {
                         int h = Integer.parseInt(m.group(3));
                         int min = Integer.parseInt(m.group(4));
                         if (h >= 0 && h <= 23 && min >= 0 && min <= 59) {
-                            timer[i].timeInDay = m.group(3) + ":" + m.group(4);
+                            timer[i].hourOfDay = h;
+                            timer[i].min = min;
+                            timer[i].int2str();
                         } else {
-                            timer[i].timeInDay = "00:00";
+                            timer[i].timeInDay = INITIAL_TIME;
+                            timer[i].str2int();
                             doRewriteFile = true;
                         }
                     } else {
                         timer[i].available = false;
                         timer[i].cameraDisable = true;
-                        timer[i].timeInDay = "00:00";
+                        timer[i].timeInDay = INITIAL_TIME;
+                        timer[i].str2int();
                         doRewriteFile = true;
                     }
                 } else {
                     timer[i].available = false;
                     timer[i].cameraDisable = true;
-                    timer[i].timeInDay = "00:00";
+                    timer[i].timeInDay = INITIAL_TIME;
+                    timer[i].str2int();
                     doRewriteFile = true;
                 }
                 if ((line = reader.readLine()) != null) {
@@ -220,7 +249,8 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0 ; i <= timerEndIndex ; i++) {
                 timer[i].available = false;
                 timer[i].cameraDisable = true;
-                timer[i].timeInDay = "00:00";
+                timer[i].timeInDay = INITIAL_TIME;
+                timer[i].str2int();
                 timer[i].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                 timer[i].afterStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
             }
@@ -354,6 +384,111 @@ public class MainActivity extends AppCompatActivity {
                         cbTimer3.setChecked(isChecked);
                         timer[3].available = isChecked;
                         rewriteSettingFile();
+                    }
+                }
+        );
+
+        final Switch swTimer1 = (Switch)findViewById(R.id.changeSwitch1);
+        swTimer1.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                        swTimer1.setChecked(isChecked);
+                        timer[1].cameraDisable = isChecked;
+                        timer[1].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+                        rewriteSettingFile();
+                    }
+                }
+        );
+
+        final Switch swTimer2 = (Switch)findViewById(R.id.changeSwitch2);
+        swTimer2.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                        swTimer2.setChecked(isChecked);
+                        timer[2].cameraDisable = isChecked;
+                        timer[2].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+                        rewriteSettingFile();
+                    }
+                }
+        );
+
+        final Switch swTimer3 = (Switch)findViewById(R.id.changeSwitch3);
+        swTimer3.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                        swTimer3.setChecked(isChecked);
+                        timer[3].cameraDisable = isChecked;
+                        timer[3].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+                        rewriteSettingFile();
+                    }
+                }
+        );
+
+        final TimePickerDialog tpdTimer1 = new TimePickerDialog(this,
+                new TimePickerDialog.OnTimeSetListener() {
+                    @Override
+                    public void onTimeSet(TimePicker view, int hourOfDay, int min) {
+                        timer[1].hourOfDay = hourOfDay;
+                        timer[1].min = min;
+                        timer[1].int2str();
+                        ((TextView)findViewById(R.id.textTimer1)).setText(timer[1].timeInDay);
+                        rewriteSettingFile();
+                    }
+                }, timer[1].hourOfDay, timer[1].min, true);
+
+        final TextView tmTimer1 = (TextView)findViewById(R.id.textTimer1);
+        tmTimer1.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        tpdTimer1.show();
+                    }
+                }
+        );
+
+        final TimePickerDialog tpdTimer2 = new TimePickerDialog(this,
+                new TimePickerDialog.OnTimeSetListener() {
+                    @Override
+                    public void onTimeSet(TimePicker view, int hourOfDay, int min) {
+                        timer[2].hourOfDay = hourOfDay;
+                        timer[2].min = min;
+                        timer[2].int2str();
+                        ((TextView)findViewById(R.id.textTimer2)).setText(timer[2].timeInDay);
+                        rewriteSettingFile();
+                    }
+                }, timer[2].hourOfDay, timer[2].min, true);
+
+        final TextView tmTimer2 = (TextView)findViewById(R.id.textTimer2);
+        tmTimer2.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        tpdTimer2.show();
+                    }
+                }
+        );
+
+        final TimePickerDialog tpdTimer3 = new TimePickerDialog(this,
+                new TimePickerDialog.OnTimeSetListener() {
+                    @Override
+                    public void onTimeSet(TimePicker view, int hourOfDay, int min) {
+                        timer[3].hourOfDay = hourOfDay;
+                        timer[3].min = min;
+                        timer[3].int2str();
+                        ((TextView)findViewById(R.id.textTimer3)).setText(timer[3].timeInDay);
+                        rewriteSettingFile();
+                    }
+                }, timer[3].hourOfDay, timer[3].min, true);
+
+        final TextView tmTimer3 = (TextView)findViewById(R.id.textTimer3);
+        tmTimer3.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        tpdTimer3.show();
                     }
                 }
         );
