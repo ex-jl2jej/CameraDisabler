@@ -1,11 +1,14 @@
 package com.gmail.jl2jej.wor;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Parcelable;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -30,6 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.util.Calendar.DATE;
+import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.HOUR;
 import static java.util.Calendar.MINUTE;
 import static java.util.Calendar.MONTH;
@@ -37,15 +41,16 @@ import static java.util.Calendar.SECOND;
 import static java.util.Calendar.YEAR;
 
 class Timer {
-    public Boolean available;
-    public Boolean cameraDisable;
-    public String timeInDay;
-    public int hourOfDay;
-    public int min;
-    public Calendar beforeStart;
-    public Calendar afterStart;
+    protected Boolean available;
+    protected Boolean cameraDisable;
+    protected String timeInDay;
+    protected int hourOfDay;
+    protected int min;
+    protected Calendar beforeStart;
+    protected Calendar afterStart;
+    protected Boolean isSet;
 
-    public void str2int() {
+    protected void str2int() {
         String regex = "(\\d\\d):(\\d\\d)$";
         Pattern ptn = Pattern.compile(regex);
 
@@ -60,21 +65,23 @@ class Timer {
         }
     }
 
-    public void int2str() {
+    protected void int2str() {
         this.timeInDay = String.format("%02d:%02d", this.hourOfDay, this.min);
     }
 }
 
-@RequiresApi(api = Build.VERSION_CODES.N)
+//@RequiresApi(api = Build.VERSION_CODES.N)
 public class MainActivity extends AppCompatActivity {
     private final String TAG = "CameraDisable";
+    public final String KEYWORD = "CAMERA_DISABLE";
+    public final String RCODE = "RCODE";
     private final String settingFileName = "setting.dat";
-    DevicePolicyManager devicePolicyManager;
-    ComponentName tCameraReceiver;
-    Boolean tCameraActive;
+    protected DevicePolicyManager devicePolicyManager;
+    protected ComponentName tCameraReceiver;
+    private Boolean tCameraActive;
 
-    private Calendar timeBeforeDisable = Calendar.getInstance();
-    private Calendar timeBeforeEnable = Calendar.getInstance();
+    protected Calendar timeBeforeDisable = Calendar.getInstance();
+    protected Calendar timeBeforeEnable = Calendar.getInstance();
     private Calendar timeHolidayModeOn = Calendar.getInstance();
     private final int timerStartIndex = 1;
     private final int timerEndIndex = 3;
@@ -97,6 +104,8 @@ public class MainActivity extends AppCompatActivity {
     private final int MIN_POS = 5;
     private final int SEC_POS = 6;
 
+    Globals globals;
+
     protected Calendar parseDateString(String str) {
         Calendar date = Calendar.getInstance();
         String regex = "(\\d+)/(\\d+)/(\\d+)\\s+(\\d+):(\\d+):(\\d+)$";
@@ -118,8 +127,8 @@ public class MainActivity extends AppCompatActivity {
         return date;
     }
 
-    protected String dateToString(Calendar date)  {
-        String str = String.format("%04d/%02d/%02d %02d:%02d:%02d", date.get(YEAR), date.get(MONTH)+1, date.get(Calendar.DAY_OF_MONTH), date.get(Calendar.HOUR_OF_DAY), date.get(MINUTE), date.get(SECOND));
+    protected static String dateToString(Calendar date)  {
+        String str = String.format("%04d/%02d/%02d %02d:%02d:%02d", date.get(YEAR), date.get(MONTH)+1, date.get(DAY_OF_MONTH), date.get(Calendar.HOUR_OF_DAY), date.get(MINUTE), date.get(SECOND));
 
         return str;
     }
@@ -127,16 +136,6 @@ public class MainActivity extends AppCompatActivity {
     protected Boolean readSettingFile() {
         BufferedReader reader = null;
         Boolean doRewriteFile = false;
-
-        for (int i = 0 ; i <= timerEndIndex ; i++) {
-            timer[i] = new Timer();
-            timer[i].available = false;
-            timer[i].cameraDisable = true;
-            timer[i].timeInDay = INITIAL_TIME;
-            timer[i].str2int();
-            timer[i].beforeStart = Calendar.getInstance();
-            timer[i].afterStart = Calendar.getInstance();
-        }
 
         try {
             reader = new BufferedReader(new InputStreamReader(openFileInput(settingFileName)));
@@ -220,6 +219,16 @@ public class MainActivity extends AppCompatActivity {
 
                 if ((line = reader.readLine()) != null) {
                     try {
+                        String regex = "(.*)\\s+SET$";
+                        Pattern ptn = Pattern.compile(regex);
+
+                        Matcher m = ptn.matcher(line);
+                        if (m.find()) {
+                            line = m.group(1);
+                            timer[i].isSet = true;
+                        } else {
+                            timer[i].isSet = false;
+                        }
                         timer[i].afterStart = parseDateString(line);
                     } catch (IllegalArgumentException e) {
                         timer[i].afterStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
@@ -276,7 +285,7 @@ public class MainActivity extends AppCompatActivity {
             writer.write(dateToString(timeBeforeDisable) + newLine);
             writer.write(dateToString(timeBeforeEnable) + newLine);
             for (int i = 0 ; i <= timerEndIndex ; i++ ) {
-                if (timer[i].available) {
+                if (timer[i].available && timer[i].isSet) {
                     writer.write("true ");
                 } else {
                     writer.write("false ");
@@ -288,7 +297,11 @@ public class MainActivity extends AppCompatActivity {
                 }
                 writer.write(timer[i].timeInDay + newLine);
                 writer.write(dateToString(timer[i].beforeStart) + newLine);
-                writer.write(dateToString(timer[i].afterStart) + newLine);
+                if (timer[i].isSet) {
+                    writer.write(dateToString(timer[i].afterStart) + " SET" + newLine);
+                } else {
+                    writer.write(dateToString(timer[i].afterStart) + newLine);
+                }
             }
             writer.write(dateToString(timeHolidayModeOn) + newLine);
         } catch (IOException e) {
@@ -304,13 +317,74 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    protected void setTimer(Boolean cameraDisable, int requestCode, Calendar calendar) {
+        Intent intent = new Intent(getApplicationContext(), AlarmBroadcastReceiver.class);
+        intent.putExtra(KEYWORD, cameraDisable);
+        intent.putExtra(RCODE, requestCode);
+        //intent.putExtra("TEXTVIEW", findViewById(R.id.textBeforeDisable));
+        PendingIntent sender = PendingIntent.getBroadcast(getApplicationContext(), requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        AlarmManager alarmManager = (AlarmManager)getSystemService(ALARM_SERVICE);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
+    }
+
+    public void cancelTimer(int requestCode) {
+        Intent intent = new Intent(getApplicationContext(), AlarmBroadcastReceiver.class);
+        PendingIntent sender = PendingIntent.getBroadcast(getApplicationContext(), requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        AlarmManager alarmManager = (AlarmManager)getSystemService(ALARM_SERVICE);
+        alarmManager.cancel(sender);
+    }
+
+    protected Calendar makeTargetTime(int requestCode) {
+        Calendar nowTime = Calendar.getInstance();
+        Calendar targetTime = Calendar.getInstance();
+
+        if (timer[dateChange].available
+                || ( (timer[requestCode].hourOfDay*60+timer[requestCode].min) <= (nowTime.get(Calendar.HOUR_OF_DAY)*60+nowTime.get(MINUTE)))) {
+            int nowDay = targetTime.get(DAY_OF_MONTH);
+            targetTime.set(DAY_OF_MONTH, nowDay + 1);
+        }
+        targetTime.set(Calendar.HOUR_OF_DAY, timer[requestCode].hourOfDay);
+        targetTime.set(MINUTE, timer[requestCode].min);
+        targetTime.set(SECOND, 0);
+
+        return targetTime;
+    }
+
+    protected void setNormalTimer(int requestCode) {
+        Calendar targetTime = makeTargetTime(requestCode);
+
+        if (timer[requestCode].available == false && timer[requestCode].isSet == true ) {
+            cancelTimer(requestCode);
+        } else if (timer[requestCode].available == true) {
+            if (timer[requestCode].isSet == true) { // 設定されている
+                cancelTimer(requestCode);
+            }
+            setTimer(timer[requestCode].cameraDisable, requestCode, targetTime);
+        }
+        timer[requestCode].afterStart = targetTime;
+        rewriteView();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        for (int i = 0 ; i <= timerEndIndex ; i++) {
+            timer[i] = new Timer();
+            timer[i].available = false;
+            timer[i].cameraDisable = true;
+            timer[i].timeInDay = INITIAL_TIME;
+            timer[i].str2int();
+            timer[i].beforeStart = Calendar.getInstance();
+            timer[i].afterStart = Calendar.getInstance();
+            timer[i].isSet = false;
+        }
+
         devicePolicyManager = (DevicePolicyManager)getSystemService(this.DEVICE_POLICY_SERVICE);
-        tCameraReceiver = new ComponentName(this, cameraReceiver.class);
+        tCameraReceiver = new ComponentName(this, CameraReceiver.class);
 
         Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
         intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, tCameraReceiver);
@@ -345,7 +419,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }});
 
-
         if ( readSettingFile() ) {
             rewriteSettingFile();
         }
@@ -359,6 +432,9 @@ public class MainActivity extends AppCompatActivity {
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         cbTimer1.setChecked(isChecked);
                         timer[1].available = isChecked;
+                        if (isChecked) {
+                            setNormalTimer(1);
+                        }
                         rewriteSettingFile();
                     }
                 }
