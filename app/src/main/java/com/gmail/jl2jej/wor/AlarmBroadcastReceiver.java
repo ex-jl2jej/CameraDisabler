@@ -13,47 +13,41 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.app.Activity;
 
-
 import java.util.Calendar;
-
 
 /**
  * Created by kido on 2017/07/07.
  */
 
 public class AlarmBroadcastReceiver extends BroadcastReceiver {
+    public static final String CAMERA_DISABLE = "CAMERA_DISABLE";
+    public static final String RCODE = "RCODE";
     protected DevicePolicyManager devicePolicyManager;
     protected ComponentName tCameraReceiver;
-
-    protected void setTimer(Context context, Boolean cameraDisable, int requestCode, Calendar calendar) {
-        Intent intent = new Intent(context.getApplicationContext(), AlarmBroadcastReceiver.class);
-        intent.putExtra("KEYWORD", cameraDisable);
-        intent.putExtra("RCODE", requestCode);
-        PendingIntent sender = PendingIntent.getBroadcast(context.getApplicationContext(), requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        AlarmManager alarmManager = (AlarmManager)context.getSystemService(context.ALARM_SERVICE);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
-    }
-
-    protected void cancelTimer(Context context, int requestCode) {
-        Intent intent = new Intent(context.getApplicationContext(), AlarmBroadcastReceiver.class);
-        PendingIntent sender = PendingIntent.getBroadcast(context.getApplicationContext(), requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        AlarmManager alarmManager = (AlarmManager)context.getSystemService(context.ALARM_SERVICE);
-        alarmManager.cancel(sender);
-    }
 
     @Override
     public void onReceive(Context context, Intent intent) {
         devicePolicyManager = (DevicePolicyManager)context.getSystemService(context.DEVICE_POLICY_SERVICE);
         tCameraReceiver = new ComponentName(context, CameraReceiver.class);
-        Boolean cameraDisable = intent.getBooleanExtra("KEYWORD", true);
-        int requestCode = intent.getIntExtra("RCODE", 1);
+        Globals g = new Globals(context);
+        Boolean cameraDisable = intent.getBooleanExtra(CAMERA_DISABLE, true);
+        int requestCode = intent.getIntExtra(RCODE, 1);
 
         devicePolicyManager.setCameraDisabled(tCameraReceiver, cameraDisable);
+        if (cameraDisable) {
+            g.timeBeforeDisable = Calendar.getInstance();
+        } else {
+            g.timeBeforeEnable = Calendar.getInstance();
+        }
 
-        cancelTimer(context, requestCode);
-       
-        Toast.makeText(context, "Received ", Toast.LENGTH_LONG).show();
+        g.cancelTimer(context, requestCode);
+        g.timer[requestCode].beforeStart = Calendar.getInstance();
+        g.timer[requestCode].isSet = false;
+
+        g.setNormalTimer(context, requestCode);
+
+        g.rewriteSettingFile(context);
+
+        //Toast.makeText(context, "Received ", Toast.LENGTH_LONG).show();
     }
 }
