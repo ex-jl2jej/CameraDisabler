@@ -84,7 +84,8 @@ public class Globals extends Application {
                 || ( (timer[requestCode].hourOfDay*60+timer[requestCode].min) <= (nowTime.get(Calendar.HOUR_OF_DAY)*60+nowTime.get(MINUTE)))) {
             int nowDay = targetTime.get(DAY_OF_MONTH);
             targetTime.set(DAY_OF_MONTH, nowDay + 1);
-            Toast.makeText(that, String.format("%d:%d %d:%d", timer[requestCode].hourOfDay, timer[requestCode].min, nowTime.get(Calendar.HOUR_OF_DAY), nowTime.get(MINUTE)), Toast.LENGTH_LONG).show();
+            //Toast.makeText(that, String.format("%d:%d %d:%d", timer[requestCode].hourOfDay, timer[requestCode].min,
+            //        nowTime.get(Calendar.HOUR_OF_DAY), nowTime.get(MINUTE)), Toast.LENGTH_LONG).show();
 
         }
         targetTime.set(Calendar.HOUR_OF_DAY, timer[requestCode].hourOfDay);
@@ -320,6 +321,11 @@ public class Globals extends Application {
         }
     }
 
+    public Intent getIntentFromGlobals(Intent globalsIntent) {
+        globalsIntent.putExtra("timeBeforeDisable", dateToString(timeBeforeDisable));
+        return globalsIntent;
+    }
+
     public Globals(Context context) {
         timeBeforeDisable = Calendar.getInstance();
         timeBeforeEnable = Calendar.getInstance();
@@ -336,8 +342,6 @@ public class Globals extends Application {
             timer[i].afterStart = Calendar.getInstance();
             timer[i].isSet = false;
         }
-
-        readSettingFile(context);
     }
 
     public Globals() {

@@ -1,20 +1,22 @@
 package com.gmail.jl2jej.wor;
 
 import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.app.admin.DevicePolicyManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
+import android.os.Message;
 import android.os.Parcelable;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Handler;
 import android.content.ComponentName;
+import android.text.method.BaseKeyListener;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -23,15 +25,8 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.text.MessageFormat;
 import java.util.Calendar;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 import static com.gmail.jl2jej.wor.AlarmBroadcastReceiver.CAMERA_DISABLE;
 import static com.gmail.jl2jej.wor.AlarmBroadcastReceiver.RCODE;
@@ -53,7 +48,11 @@ public class MainActivity extends AppCompatActivity {
     private ComponentName tCameraReceiver;
     private Boolean tCameraActive;
 
-    public Globals g;
+    private UpdateReceiver updateReceiver;
+    private IntentFilter intentFilter;
+
+    private static Intent serviceIntent = null;
+    private static Globals g = null;
     public Context mc;
 
     // 日付の初期値
@@ -76,9 +75,26 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        g = new Globals(this);
-        mc = this;
+//        g = new Globals(this);
+//        mc = this;
+//        if (g.readSettingFile(mc)) {
+//            g.rewriteSettingFile(mc);
+//        }
+        //ハンドラーが動くようにする
+        updateReceiver = new UpdateReceiver();
+        intentFilter = new IntentFilter();
+        intentFilter.addAction("REDRAW_ACTION");
+        registerReceiver(updateReceiver, intentFilter);
 
+        updateReceiver.registerHandler(updateHandler);
+
+        //初期化のサービスを動かす
+        serviceIntent = new Intent(this, com.gmail.jl2jej.wor.BackEndService.class);
+        serviceIntent.putExtra("CALLED", "MainActivity");
+        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.START_ACTIVITY);
+        startService(serviceIntent);
+
+        //カメラを有効無効できるようにする
         devicePolicyManager = (DevicePolicyManager)getSystemService(this.DEVICE_POLICY_SERVICE);
         tCameraReceiver = new ComponentName(this, CameraReceiver.class);
 
@@ -102,24 +118,24 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked ) {
                 if (isChecked) {
                     devicePolicyManager.setCameraDisabled(tCameraReceiver, true);
-                    g.timeBeforeDisable = Calendar.getInstance();
+                    serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_DISABLE);
+                    String nt = g.dateToString(Calendar.getInstance());
+                    serviceIntent.putExtra(BackEndService.NOW_TIME, nt );
                     TextView textBeforeDisable = (TextView)findViewById(R.id.textBeforeDisable);
-                    textBeforeDisable.setText(g.dateToString(g.timeBeforeDisable));
-                    g.rewriteSettingFile(mc);
+                    textBeforeDisable.setText(nt);
+                    startService(serviceIntent);
                     Log.i(TAG, "true");
                 } else {
                     devicePolicyManager.setCameraDisabled(tCameraReceiver, false);
-                    g.timeBeforeEnable = Calendar.getInstance();
+                    serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_ENABLE);
+                    String nt = g.dateToString(Calendar.getInstance());
+                    serviceIntent.putExtra(BackEndService.NOW_TIME, nt );
                     TextView textBeforeEnable = (TextView)findViewById(R.id.textBeforeEnable);
-                    textBeforeEnable.setText(g.dateToString(g.timeBeforeEnable));
-                    g.rewriteSettingFile(mc);
+                    textBeforeEnable.setText(nt);
+                    startService(serviceIntent);
                     Log.i(TAG, "false");
                 }
             }});
-
-        if ( g.readSettingFile(mc) ) {
-            g.rewriteSettingFile(mc);
-        }
 
         rewriteView();
 
@@ -129,12 +145,10 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         cbTimer1.setChecked(isChecked);
-                        g.timer[1].available = isChecked;
-                        if (isChecked) {
-                            g.setNormalTimer(mc, 1);
-                        }
-                        g.rewriteSettingFile(mc);
-                    }
+                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER1);
+                        serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
+                        startService(serviceIntent);
+                      }
                 }
         );
 
@@ -149,6 +163,7 @@ public class MainActivity extends AppCompatActivity {
                             g.setNormalTimer(mc, 2);
                         }
                         g.rewriteSettingFile(mc);
+                        rewriteView();
                     }
                 }
         );
@@ -164,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
                             g.setNormalTimer(mc, 3);
                         }
                         g.rewriteSettingFile(mc);
+                        rewriteView();
                     }
                 }
         );
@@ -180,6 +196,7 @@ public class MainActivity extends AppCompatActivity {
                             g.setNormalTimer(mc, 1);
                         }
                         g.rewriteSettingFile(mc);
+                        rewriteView();
                     }
                 }
         );
@@ -196,6 +213,7 @@ public class MainActivity extends AppCompatActivity {
                             g.setNormalTimer(mc, 2);
                         }
                         g.rewriteSettingFile(mc);
+                        rewriteView();
                     }
                 }
         );
@@ -212,6 +230,7 @@ public class MainActivity extends AppCompatActivity {
                             g.setNormalTimer(mc, 3);
                         }
                         g.rewriteSettingFile(mc);
+                        rewriteView();
                     }
                 }
         );
@@ -299,7 +318,17 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
-    protected void rewriteView() {
+    private Handler updateHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            Bundle bundle = msg.getData();
+            //String message = bundle.getString("message");
+
+            g.readSettingFile(mc);
+            rewriteView();
+        }
+    };
+
+    public void rewriteView() {
         Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
         if (devicePolicyManager.getCameraDisabled(tCameraReceiver)) {
             directSwitch.setChecked(true);

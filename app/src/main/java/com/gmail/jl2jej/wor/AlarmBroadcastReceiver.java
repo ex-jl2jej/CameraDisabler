@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,26 +28,35 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        devicePolicyManager = (DevicePolicyManager)context.getSystemService(context.DEVICE_POLICY_SERVICE);
-        tCameraReceiver = new ComponentName(context, CameraReceiver.class);
-        Globals g = new Globals(context);
+//        devicePolicyManager = (DevicePolicyManager)context.getSystemService(context.DEVICE_POLICY_SERVICE);
+//        tCameraReceiver = new ComponentName(context, CameraReceiver.class);
+//        Globals g = new Globals(context);
         Boolean cameraDisable = intent.getBooleanExtra(CAMERA_DISABLE, true);
         int requestCode = intent.getIntExtra(RCODE, 1);
 
-        devicePolicyManager.setCameraDisabled(tCameraReceiver, cameraDisable);
-        if (cameraDisable) {
-            g.timeBeforeDisable = Calendar.getInstance();
-        } else {
-            g.timeBeforeEnable = Calendar.getInstance();
-        }
+        Log.i("ABR", "onReceive");
+//        devicePolicyManager.setCameraDisabled(tCameraReceiver, cameraDisable);
+//        if (cameraDisable) {
+//            g.timeBeforeDisable = Calendar.getInstance();
+//        } else {
+//            g.timeBeforeEnable = Calendar.getInstance();
+//        }
+//
+//        g.cancelTimer(context, requestCode);
+//        g.timer[requestCode].beforeStart = Calendar.getInstance();
+//        g.timer[requestCode].isSet = false;
+//
+//        g.setNormalTimer(context, requestCode);
+//
+//        g.rewriteSettingFile(context);
 
-        g.cancelTimer(context, requestCode);
-        g.timer[requestCode].beforeStart = Calendar.getInstance();
-        g.timer[requestCode].isSet = false;
+        Intent redrawServiceIntent = new Intent(context, BackEndService.class);
+        redrawServiceIntent.putExtra(BackEndService.COMMAND, BackEndService.REDRAW);
+        redrawServiceIntent.putExtra("CALLED", "AlarmBroadCast");
+        redrawServiceIntent.putExtra(CAMERA_DISABLE, cameraDisable);
+        redrawServiceIntent.putExtra(RCODE, requestCode);
+        context.startService(redrawServiceIntent);
 
-        g.setNormalTimer(context, requestCode);
-
-        g.rewriteSettingFile(context);
 
         //Toast.makeText(context, "Received ", Toast.LENGTH_LONG).show();
     }
