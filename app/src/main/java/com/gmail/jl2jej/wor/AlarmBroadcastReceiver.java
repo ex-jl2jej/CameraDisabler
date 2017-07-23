@@ -1,14 +1,10 @@
 package com.gmail.jl2jej.wor;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
-import android.os.Bundle;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Handler;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,43 +17,35 @@ import java.util.Calendar;
  */
 
 public class AlarmBroadcastReceiver extends BroadcastReceiver {
-    public static final String CAMERA_DISABLE = "CAMERA_DISABLE";
-    public static final String RCODE = "RCODE";
+    private static final String TAG = "AlarmBroadcastReceiver";
     protected DevicePolicyManager devicePolicyManager;
     protected ComponentName tCameraReceiver;
 
     @Override
     public void onReceive(Context context, Intent intent) {
-//        devicePolicyManager = (DevicePolicyManager)context.getSystemService(context.DEVICE_POLICY_SERVICE);
-//        tCameraReceiver = new ComponentName(context, CameraReceiver.class);
-//        Globals g = new Globals(context);
-        Boolean cameraDisable = intent.getBooleanExtra(CAMERA_DISABLE, true);
-        int requestCode = intent.getIntExtra(RCODE, 1);
+        devicePolicyManager = (DevicePolicyManager)context.getSystemService(context.DEVICE_POLICY_SERVICE);
+        tCameraReceiver = new ComponentName(context, CameraReceiver.class);
+        Boolean cameraDisable = intent.getBooleanExtra(BackEndService.CAMERA_DISABLE, true);
+        int requestCode = intent.getIntExtra(BackEndService.REQUEST_CODE, 1);
+        Boolean oldCameraDisable = devicePolicyManager.getCameraDisabled(tCameraReceiver);
 
-        Log.i("ABR", "onReceive");
-//        devicePolicyManager.setCameraDisabled(tCameraReceiver, cameraDisable);
-//        if (cameraDisable) {
-//            g.timeBeforeDisable = Calendar.getInstance();
-//        } else {
-//            g.timeBeforeEnable = Calendar.getInstance();
-//        }
-//
-//        g.cancelTimer(context, requestCode);
-//        g.timer[requestCode].beforeStart = Calendar.getInstance();
-//        g.timer[requestCode].isSet = false;
-//
-//        g.setNormalTimer(context, requestCode);
-//
-//        g.rewriteSettingFile(context);
+         Log.i(TAG, "onReceive");
+        devicePolicyManager.setCameraDisabled(tCameraReceiver, cameraDisable);
 
-        Intent redrawServiceIntent = new Intent(context, BackEndService.class);
-        redrawServiceIntent.putExtra(BackEndService.COMMAND, BackEndService.REDRAW);
-        redrawServiceIntent.putExtra("CALLED", "AlarmBroadCast");
-        redrawServiceIntent.putExtra(CAMERA_DISABLE, cameraDisable);
-        redrawServiceIntent.putExtra(RCODE, requestCode);
-        context.startService(redrawServiceIntent);
+        Intent serviceIntent = new Intent(context, BackEndService.class);
 
+        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.ALARM_RECEIVE);
+        serviceIntent.putExtra("CALLED", "AlarmBroadCast");
+        serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, cameraDisable);
+        serviceIntent.putExtra(BackEndService.REQUEST_CODE, requestCode);
+        serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(Calendar.getInstance()));
+        if ( (oldCameraDisable == true && cameraDisable == false)
+            || (oldCameraDisable == false && cameraDisable == true) ) {
+            serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, true);
+        } else {
+            serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, false);
+        }
 
-        //Toast.makeText(context, "Received ", Toast.LENGTH_LONG).show();
+         context.startService(serviceIntent);
     }
 }

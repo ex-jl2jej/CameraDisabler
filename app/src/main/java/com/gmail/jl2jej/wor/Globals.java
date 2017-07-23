@@ -5,6 +5,8 @@ import android.app.Application;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
@@ -17,8 +19,6 @@ import java.util.Calendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.gmail.jl2jej.wor.AlarmBroadcastReceiver.CAMERA_DISABLE;
-import static com.gmail.jl2jej.wor.AlarmBroadcastReceiver.RCODE;
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.MINUTE;
 import static java.util.Calendar.MONTH;
@@ -30,6 +30,7 @@ import static java.util.Calendar.YEAR;
  */
 
 public class Globals extends Application {
+    private static final String TAG = "Globals";
     // 日付の初期値
     private final int INIT_YEAR = 1970;
     private final int INIT_MONTH = 1;
@@ -48,7 +49,7 @@ public class Globals extends Application {
     public static final String settingFileName = "setting.dat";
     public static final String INITIAL_TIME = "00:00";
 
-    protected Context that;
+    //protected Context that;
     protected Calendar timeBeforeDisable;
     protected Calendar timeBeforeEnable;
     protected Calendar timeHolidayModeOn;
@@ -60,8 +61,8 @@ public class Globals extends Application {
 
     protected void setTimer(Context context, Boolean cameraDisable, int requestCode, Calendar calendar) {
         Intent intent = new Intent(context.getApplicationContext(), AlarmBroadcastReceiver.class);
-        intent.putExtra(CAMERA_DISABLE, cameraDisable);
-        intent.putExtra(RCODE, requestCode);
+        intent.putExtra(BackEndService.CAMERA_DISABLE, cameraDisable);
+        intent.putExtra(BackEndService.REQUEST_CODE, requestCode);
         PendingIntent sender = PendingIntent.getBroadcast(context.getApplicationContext(), requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(context.ALARM_SERVICE);
@@ -141,6 +142,7 @@ public class Globals extends Application {
         BufferedReader reader = null;
         Boolean doRewriteFile = false;
 
+        Log.i(TAG, "readSettingFile in");
         try {
             reader = new BufferedReader(new InputStreamReader(context.openFileInput(settingFileName)));
             String line;
@@ -278,6 +280,7 @@ public class Globals extends Application {
                 e.printStackTrace();
             }
         }
+        Log.i(TAG, "readSettingFile out");
         return doRewriteFile;
     }
 
@@ -322,16 +325,45 @@ public class Globals extends Application {
     }
 
     public Intent getIntentFromGlobals(Intent globalsIntent) {
-        globalsIntent.putExtra("timeBeforeDisable", dateToString(timeBeforeDisable));
+        Globals g = this;
+        globalsIntent.putExtra("timeBeforeDisable", dateToString(g.timeBeforeDisable));
+        globalsIntent.putExtra("timeBeforeEnable", dateToString(g.timeBeforeEnable));
+        globalsIntent.putExtra("timeHolidayModeOn", dateToString(g.timeHolidayModeOn));
+        for (int i = 0 ; i <= timerEndIndex ; i++ ) {
+            globalsIntent.putExtra("cbTimer"+Integer.toString(i), g.timer[i].available );
+            globalsIntent.putExtra("swTimer"+Integer.toString(i), g.timer[i].cameraDisable);
+            globalsIntent.putExtra("timeTimer"+Integer.toString(i), g.timer[i].timeInDay);
+            globalsIntent.putExtra("btTimer"+Integer.toString(i), dateToString(g.timer[i].beforeStart));
+            globalsIntent.putExtra("atTimer"+Integer.toString(i), dateToString(g.timer[i].afterStart));
+            globalsIntent.putExtra("setTimer"+Integer.toString(i), g.timer[i].isSet);
+        }
         return globalsIntent;
     }
 
-    public Globals(Context context) {
+    public void setGlobalsFromIntent(Bundle bundle) {
+        Globals g = this;
+        g.timeBeforeDisable = g.parseDateString(bundle.getString("timeBeforeDisable"));
+        g.timeBeforeEnable = g.parseDateString(bundle.getString("timeBeforeEnable"));
+        g.timeHolidayModeOn = g.parseDateString(bundle.getString("timeHolidayModeOn"));
+        for (int i = 0 ; i <= timerEndIndex ; i++ ) {
+            g.timer[i].available = bundle.getBoolean("cbTimer"+Integer.toString(i), false);
+            g.timer[i].cameraDisable = bundle.getBoolean("swTimer"+Integer.toString(i), true );
+            g.timer[i].timeInDay = bundle.getString("timeTimer"+Integer.toString(i));
+            g.timer[i].beforeStart = g.parseDateString(bundle.getString("btTimer"+Integer.toString(i)));
+            g.timer[i].afterStart = g.parseDateString(bundle.getString("atTimer"+Integer.toString(i)));
+            g.timer[i].isSet = bundle.getBoolean("setTimer"+Integer.toString(i), false);
+        }
+    }
+
+    public Globals() {
         timeBeforeDisable = Calendar.getInstance();
+        timeBeforeDisable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
         timeBeforeEnable = Calendar.getInstance();
+        timeBeforeEnable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
         timeHolidayModeOn = Calendar.getInstance();
+        timeHolidayModeOn.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
         timer = new jejTimer[timerEndIndex+1];
-        that = context;
+        //that = context;
         for (int i = 0 ; i <= timerEndIndex ; i++) {
             timer[i] = new jejTimer();
             timer[i].available = false;
@@ -339,12 +371,10 @@ public class Globals extends Application {
             timer[i].timeInDay = INITIAL_TIME;
             timer[i].str2int();
             timer[i].beforeStart = Calendar.getInstance();
+            timer[i].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
             timer[i].afterStart = Calendar.getInstance();
+            timer[i].afterStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
             timer[i].isSet = false;
         }
-    }
-
-    public Globals() {
-
     }
 }

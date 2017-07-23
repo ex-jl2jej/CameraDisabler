@@ -24,12 +24,7 @@ import android.widget.Switch;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.TimePicker;
-
 import java.util.Calendar;
-
-
-import static com.gmail.jl2jej.wor.AlarmBroadcastReceiver.CAMERA_DISABLE;
-import static com.gmail.jl2jej.wor.AlarmBroadcastReceiver.RCODE;
 import static com.gmail.jl2jej.wor.Globals.dateChange;
 
 import static java.util.Calendar.DATE;
@@ -43,7 +38,7 @@ import static java.util.Calendar.YEAR;
 
 //@RequiresApi(api = Build.VERSION_CODES.N)
 public class MainActivity extends AppCompatActivity {
-    public static final String TAG = "CameraDisable";
+    private static final String TAG = "CameraDisable";
     private DevicePolicyManager devicePolicyManager;
     private ComponentName tCameraReceiver;
     private Boolean tCameraActive;
@@ -51,9 +46,9 @@ public class MainActivity extends AppCompatActivity {
     private UpdateReceiver updateReceiver;
     private IntentFilter intentFilter;
 
-    private static Intent serviceIntent = null;
-    private static Globals g = null;
-    public Context mc;
+    //private static Intent serviceIntent = null;
+    private static Globals ag = null;
+    private static Context mc;
 
     // 日付の初期値
     private final int INIT_YEAR = 1970;
@@ -70,26 +65,42 @@ public class MainActivity extends AppCompatActivity {
     private final int MIN_POS = 5;
     private final int SEC_POS = 6;
 
+    private Handler updateHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            Bundle bundle = msg.getData();
+            Log.i(TAG, "updateHandler");
+
+            //String message = bundle.getString("message");
+            ag.setGlobalsFromIntent(bundle);
+            switch (bundle.getInt(BackEndService.COMMAND)) {
+                case BackEndService.REDRAW:
+                    Log.i(TAG, "updateHandler:rewriteView");
+                    rewriteView();
+                    break;
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        g = new Globals(this);
-//        mc = this;
-//        if (g.readSettingFile(mc)) {
-//            g.rewriteSettingFile(mc);
-//        }
+        //初期値を入れた g を作っておく。
+        ag = new Globals();
+        mc = this;
+
         //ハンドラーが動くようにする
         updateReceiver = new UpdateReceiver();
         intentFilter = new IntentFilter();
-        intentFilter.addAction("REDRAW_ACTION");
+        intentFilter.addAction(BackEndService.REDRAW_ACTION);
         registerReceiver(updateReceiver, intentFilter);
 
         updateReceiver.registerHandler(updateHandler);
 
         //初期化のサービスを動かす
-        serviceIntent = new Intent(this, com.gmail.jl2jej.wor.BackEndService.class);
+        final Intent serviceIntent = new Intent(this, BackEndService.class);
         serviceIntent.putExtra("CALLED", "MainActivity");
         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.START_ACTIVITY);
         startService(serviceIntent);
@@ -109,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
         Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
         if (devicePolicyManager.getCameraDisabled(tCameraReceiver)) {
             directSwitch.setChecked(true);
-        } else {
+         } else {
             directSwitch.setChecked(false);
         }
 
@@ -119,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
                 if (isChecked) {
                     devicePolicyManager.setCameraDisabled(tCameraReceiver, true);
                     serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_DISABLE);
-                    String nt = g.dateToString(Calendar.getInstance());
+                    String nt = Globals.dateToString(Calendar.getInstance());
                     serviceIntent.putExtra(BackEndService.NOW_TIME, nt );
                     TextView textBeforeDisable = (TextView)findViewById(R.id.textBeforeDisable);
                     textBeforeDisable.setText(nt);
@@ -128,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     devicePolicyManager.setCameraDisabled(tCameraReceiver, false);
                     serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_ENABLE);
-                    String nt = g.dateToString(Calendar.getInstance());
+                    String nt = Globals.dateToString(Calendar.getInstance());
                     serviceIntent.putExtra(BackEndService.NOW_TIME, nt );
                     TextView textBeforeEnable = (TextView)findViewById(R.id.textBeforeEnable);
                     textBeforeEnable.setText(nt);
@@ -137,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }});
 
-        rewriteView();
+        //rewriteView();
 
         final CheckBox cbTimer1 = (CheckBox)findViewById(R.id.checkBoxTimer1);
         cbTimer1.setOnCheckedChangeListener(
@@ -145,8 +156,10 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         cbTimer1.setChecked(isChecked);
-                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER1);
+                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
                         serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
+                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 1);
+                        serviceIntent.putExtra("CALLED", "_CBTIMER1");
                         startService(serviceIntent);
                       }
                 }
@@ -158,31 +171,27 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         cbTimer2.setChecked(isChecked);
-                        g.timer[2].available = isChecked;
-                        if (isChecked) {
-                            g.setNormalTimer(mc, 2);
-                        }
-                        g.rewriteSettingFile(mc);
-                        rewriteView();
+                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
+                        serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
+                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 2);
+                        startService(serviceIntent);
                     }
                 }
         );
-
         final CheckBox cbTimer3 = (CheckBox)findViewById(R.id.checkBoxTimer3);
         cbTimer3.setOnCheckedChangeListener(
                 new CompoundButton.OnCheckedChangeListener() {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         cbTimer3.setChecked(isChecked);
-                        g.timer[3].available = isChecked;
-                        if (isChecked) {
-                            g.setNormalTimer(mc, 3);
-                        }
-                        g.rewriteSettingFile(mc);
-                        rewriteView();
+                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
+                        serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
+                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 3);
+                        startService(serviceIntent);
                     }
                 }
         );
+
 
         final Switch swTimer1 = (Switch)findViewById(R.id.changeSwitch1);
         swTimer1.setOnCheckedChangeListener(
@@ -190,12 +199,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         swTimer1.setChecked(isChecked);
-                        g.timer[1].cameraDisable = isChecked;
-                        g.timer[1].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
-                        if (g.timer[1].available == true) {
-                            g.setNormalTimer(mc, 1);
+                        ag.timer[1].cameraDisable = isChecked;
+                        ag.timer[1].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+                        if (ag.timer[1].available == true) {
+                            ag.setNormalTimer(mc, 1);
                         }
-                        g.rewriteSettingFile(mc);
                         rewriteView();
                     }
                 }
@@ -207,12 +215,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         swTimer2.setChecked(isChecked);
-                        g.timer[2].cameraDisable = isChecked;
-                        g.timer[2].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
-                        if (g.timer[2].available == true) {
-                            g.setNormalTimer(mc, 2);
+                        ag.timer[2].cameraDisable = isChecked;
+                        ag.timer[2].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+                        if (ag.timer[2].available == true) {
+                            ag.setNormalTimer(mc, 2);
                         }
-                        g.rewriteSettingFile(mc);
                         rewriteView();
                     }
                 }
@@ -224,12 +231,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         swTimer3.setChecked(isChecked);
-                        g.timer[3].cameraDisable = isChecked;
-                        g.timer[3].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
-                        if (g.timer[3].available == true) {
-                            g.setNormalTimer(mc, 3);
+                        ag.timer[3].cameraDisable = isChecked;
+                        ag.timer[3].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+                        if (ag.timer[3].available == true) {
+                            ag.setNormalTimer(mc, 3);
                         }
-                        g.rewriteSettingFile(mc);
                         rewriteView();
                     }
                 }
@@ -239,14 +245,13 @@ public class MainActivity extends AppCompatActivity {
                 new TimePickerDialog.OnTimeSetListener() {
                     @Override
                     public void onTimeSet(TimePicker view, int hourOfDay, int min) {
-                        g.timer[1].hourOfDay = hourOfDay;
-                        g.timer[1].min = min;
-                        g.timer[1].int2str();
-                        ((TextView)findViewById(R.id.textTimer1)).setText(g.timer[1].timeInDay);
-                        g.rewriteSettingFile(mc);
+                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_PICK );
+                        serviceIntent.putExtra(BackEndService.HOUR_OF_DAY, hourOfDay);
+                        serviceIntent.putExtra(BackEndService.MIN, min);
+                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 1);
+                        startService(serviceIntent);
                     }
-                }, g.timer[1].hourOfDay, g.timer[1].min, true);
-
+                }, ag.timer[1].hourOfDay, ag.timer[1].min, true );
         final TextView tmTimer1 = (TextView)findViewById(R.id.textTimer1);
         tmTimer1.setOnClickListener(
                 new View.OnClickListener() {
@@ -261,13 +266,13 @@ public class MainActivity extends AppCompatActivity {
                 new TimePickerDialog.OnTimeSetListener() {
                     @Override
                     public void onTimeSet(TimePicker view, int hourOfDay, int min) {
-                        g.timer[2].hourOfDay = hourOfDay;
-                        g.timer[2].min = min;
-                        g.timer[2].int2str();
-                        ((TextView)findViewById(R.id.textTimer2)).setText(g.timer[2].timeInDay);
-                        g.rewriteSettingFile(mc);
+                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_PICK );
+                        serviceIntent.putExtra(BackEndService.HOUR_OF_DAY, hourOfDay);
+                        serviceIntent.putExtra(BackEndService.MIN, min);
+                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 2);
+                        startService(serviceIntent);
                     }
-                }, g.timer[2].hourOfDay, g.timer[2].min, true);
+                }, ag.timer[2].hourOfDay, ag.timer[2].min, true);
 
         final TextView tmTimer2 = (TextView)findViewById(R.id.textTimer2);
         tmTimer2.setOnClickListener(
@@ -283,13 +288,13 @@ public class MainActivity extends AppCompatActivity {
                 new TimePickerDialog.OnTimeSetListener() {
                     @Override
                     public void onTimeSet(TimePicker view, int hourOfDay, int min) {
-                        g.timer[3].hourOfDay = hourOfDay;
-                        g.timer[3].min = min;
-                        g.timer[3].int2str();
-                        ((TextView)findViewById(R.id.textTimer3)).setText(g.timer[3].timeInDay);
-                        g.rewriteSettingFile(mc);
+                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_PICK );
+                        serviceIntent.putExtra(BackEndService.HOUR_OF_DAY, hourOfDay);
+                        serviceIntent.putExtra(BackEndService.MIN, min);
+                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 3);
+                        startService(serviceIntent);
                     }
-                }, g.timer[3].hourOfDay, g.timer[3].min, true);
+                }, ag.timer[3].hourOfDay, ag.timer[3].min, true);
 
         final TextView tmTimer3 = (TextView)findViewById(R.id.textTimer3);
         tmTimer3.setOnClickListener(
@@ -307,26 +312,16 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         cbHolidayMode.setChecked(isChecked);
-                        g.timer[dateChange].available = isChecked;
+                        ag.timer[dateChange].available = isChecked;
                         if (isChecked) {
-                            g.timeHolidayModeOn = Calendar.getInstance();
+                            ag.timeHolidayModeOn = Calendar.getInstance();
                         }
-                        g.rewriteSettingFile(mc);
-                        rewriteView();
                     }
                 }
         );
+        Log.i(TAG, "onCreate out");
     }
 
-    private Handler updateHandler = new Handler() {
-        public void handleMessage(Message msg) {
-            Bundle bundle = msg.getData();
-            //String message = bundle.getString("message");
-
-            g.readSettingFile(mc);
-            rewriteView();
-        }
-    };
 
     public void rewriteView() {
         Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
@@ -337,41 +332,48 @@ public class MainActivity extends AppCompatActivity {
         }
 
         TextView textBeforeDisable = (TextView)findViewById(R.id.textBeforeDisable);
-        textBeforeDisable.setText(g.dateToString(g.timeBeforeDisable));
+        textBeforeDisable.setText(ag.dateToString(ag.timeBeforeDisable));
+        Log.i(TAG, "rewriteView:timeBeforeDisable:"+ag.dateToString(ag.timeBeforeDisable));
 
         TextView textBeforeEnable = (TextView)findViewById(R.id.textBeforeEnable);
-        textBeforeEnable.setText(g.dateToString(g.timeBeforeEnable));
+        textBeforeEnable.setText(ag.dateToString(ag.timeBeforeEnable));
+        Log.i(TAG, "rewriteView:timeBeforeEnable:"+ag.dateToString(ag.timeBeforeEnable));
 
-        ((TextView)findViewById(R.id.textTimer1)).setText(g.timer[1].timeInDay);
-        ((TextView)findViewById(R.id.textTimer2)).setText(g.timer[2].timeInDay);
-        ((TextView)findViewById(R.id.textTimer3)).setText(g.timer[3].timeInDay);
+        ((TextView)findViewById(R.id.textTimer1)).setText(ag.timer[1].timeInDay);
+        ((TextView)findViewById(R.id.textTimer2)).setText(ag.timer[2].timeInDay);
+        ((TextView)findViewById(R.id.textTimer3)).setText(ag.timer[3].timeInDay);
 
-        ((TextView)findViewById(R.id.textBeforeTimer1)).setText(g.dateToString(g.timer[1].beforeStart));
-        ((TextView)findViewById(R.id.textBeforeTimer2)).setText(g.dateToString(g.timer[2].beforeStart));
-        ((TextView)findViewById(R.id.textBeforeTimer3)).setText(g.dateToString(g.timer[3].beforeStart));
+        ((TextView)findViewById(R.id.textBeforeTimer1)).setText(ag.dateToString(ag.timer[1].beforeStart));
+        ((TextView)findViewById(R.id.textBeforeTimer2)).setText(ag.dateToString(ag.timer[2].beforeStart));
+        ((TextView)findViewById(R.id.textBeforeTimer3)).setText(ag.dateToString(ag.timer[3].beforeStart));
 
-        ((TextView)findViewById(R.id.textAfterTimer1)).setText(g.dateToString(g.timer[1].afterStart));
-        ((TextView)findViewById(R.id.textAfterTimer2)).setText(g.dateToString(g.timer[2].afterStart));
-        ((TextView)findViewById(R.id.textAfterTimer3)).setText(g.dateToString(g.timer[3].afterStart));
+        ((TextView)findViewById(R.id.textAfterTimer1)).setText(ag.dateToString(ag.timer[1].afterStart));
+        ((TextView)findViewById(R.id.textAfterTimer2)).setText(ag.dateToString(ag.timer[2].afterStart));
+        ((TextView)findViewById(R.id.textAfterTimer3)).setText(ag.dateToString(ag.timer[3].afterStart));
 
-        ((CheckBox)findViewById(R.id.checkBoxTimer1)).setChecked(g.timer[1].available);
-        ((CheckBox)findViewById(R.id.checkBoxTimer2)).setChecked(g.timer[2].available);
-        ((CheckBox)findViewById(R.id.checkBoxTimer3)).setChecked(g.timer[3].available);
+        ((CheckBox)findViewById(R.id.checkBoxTimer1)).setChecked(ag.timer[1].available);
+        ((CheckBox)findViewById(R.id.checkBoxTimer2)).setChecked(ag.timer[2].available);
+        ((CheckBox)findViewById(R.id.checkBoxTimer3)).setChecked(ag.timer[3].available);
 
-        ((Switch)findViewById(R.id.changeSwitch1)).setChecked(g.timer[1].cameraDisable);
-        ((Switch)findViewById(R.id.changeSwitch2)).setChecked(g.timer[2].cameraDisable);
-        ((Switch)findViewById(R.id.changeSwitch3)).setChecked(g.timer[3].cameraDisable);
+        ((Switch)findViewById(R.id.changeSwitch1)).setChecked(ag.timer[1].cameraDisable);
+        ((Switch)findViewById(R.id.changeSwitch2)).setChecked(ag.timer[2].cameraDisable);
+        ((Switch)findViewById(R.id.changeSwitch3)).setChecked(ag.timer[3].cameraDisable);
 
-        ((CheckBox)findViewById(R.id.checkBoxHolidayMode)).setChecked(g.timer[dateChange].available);
-        ((TextView)findViewById(R.id.textHolidayOnTime)).setText(g.dateToString(g.timeHolidayModeOn));
+        ((CheckBox)findViewById(R.id.checkBoxHolidayMode)).setChecked(ag.timer[dateChange].available);
+        ((TextView)findViewById(R.id.textHolidayOnTime)).setText(ag.dateToString(ag.timeHolidayModeOn));
 
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        g.readSettingFile(mc);
-        rewriteView();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i(TAG, "onDestroy");
+        unregisterReceiver(updateReceiver);
     }
 
     @Override

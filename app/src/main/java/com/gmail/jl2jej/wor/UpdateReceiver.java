@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
+import android.widget.Toast;
 
 /**
  * Created by kido on 2017/07/17.
@@ -18,7 +20,7 @@ public class UpdateReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         //　ここで　もらった bundle をそのまま渡すようにする
         Bundle bundle = intent.getExtras();
-
+        Log.i("UpdateReceiver", "_onReceive");
         if (handler != null) {
             Message msg = new Message();
 
