@@ -9,6 +9,8 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import java.util.Calendar;
+
 import static android.os.SystemClock.sleep;
 
 /**
@@ -33,6 +35,8 @@ public class BackEndService extends Service {
     public static final int TIME_BEFORE_ENABLE = 5;
     public static final int CB_TIMER = 6;
     public static final int TIME_PICK = 7;
+    public static final int SW_TIMER = 8;
+    public static final int CB_HOLIDAY = 9;
 
     private static Globals g = null;
     private static Context mc = null;
@@ -60,6 +64,7 @@ public class BackEndService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         int requestCode = 1;
+        Boolean cd = true;
         super.onStartCommand(intent, flags, startId);
 
         if (g == null) {
@@ -125,6 +130,37 @@ public class BackEndService extends Service {
                     intent.setAction(BackEndService.REDRAW_ACTION);
                     sendBroadCast(intent);
                     break;
+                case SW_TIMER:
+                    requestCode = intent.getIntExtra(REQUEST_CODE, 1);
+                    cd = intent.getBooleanExtra(CAMERA_DISABLE, true);
+                    if (g.timer[requestCode].cameraDisable != cd) {
+                        g.timer[requestCode].beforeStart = g.initialCalendar();
+                    }
+                    g.timer[requestCode].cameraDisable = cd;
+                    if (g.timer[requestCode].available) {
+                        g.setNormalTimer(this, requestCode);
+                    }
+                    intent.putExtra(COMMAND, REDRAW);
+                    intent.setAction(BackEndService.REDRAW_ACTION);
+                    sendBroadCast(intent);
+                    break;
+                case CB_HOLIDAY:
+                    cd = intent.getBooleanExtra(BOOLEAN, false);
+                    boolean oldCd = g.timer[Globals.dateChange].available;
+                    g.timer[Globals.dateChange].available = cd;
+
+                    if (oldCd == false && cd == true) {
+                        g.timeHolidayModeOn = Calendar.getInstance();
+                    }
+                    for (int i = Globals.timerStartIndex ; i <= Globals.timerEndIndex ; i++) {
+                        g.setNormalTimer(this, i);
+                    }
+                    g.setNormalTimer(this, Globals.dateChange);
+
+                    intent.putExtra(COMMAND, REDRAW);
+                    intent.setAction(BackEndService.REDRAW_ACTION);
+                    sendBroadCast(intent);
+                    break;
                 case REDRAW:
                     intent.putExtra(COMMAND, REDRAW);
                     intent.setAction(BackEndService.REDRAW_ACTION);
@@ -132,15 +168,20 @@ public class BackEndService extends Service {
                     break;
                 case ALARM_RECEIVE:
                     requestCode = intent.getIntExtra(REQUEST_CODE, 1);
-                    Boolean cameraDisable = intent.getBooleanExtra(CAMERA_DISABLE, true);
-                    g.timer[requestCode].beforeStart = g.parseDateString(intent.getStringExtra(NOW_TIME));
-                    g.setNormalTimer(this, requestCode);
-                    if (intent.getBooleanExtra(REWRITE_REQUEST, false)) {
-                        if (cameraDisable) {
-                            g.timeBeforeDisable = g.parseDateString(intent.getStringExtra(NOW_TIME));
-                        } else {
-                            g.timeBeforeEnable = g.parseDateString(intent.getStringExtra(NOW_TIME));
+                    if (requestCode != Globals.dateChange) {
+                        Boolean cameraDisable = intent.getBooleanExtra(CAMERA_DISABLE, true);
+                        g.timer[requestCode].beforeStart = g.parseDateString(intent.getStringExtra(NOW_TIME));
+                        g.setNormalTimer(this, requestCode);
+                        if (intent.getBooleanExtra(REWRITE_REQUEST, false)) {
+                            if (cameraDisable) {
+                                g.timeBeforeDisable = g.parseDateString(intent.getStringExtra(NOW_TIME));
+                            } else {
+                                g.timeBeforeEnable = g.parseDateString(intent.getStringExtra(NOW_TIME));
+                            }
                         }
+                    } else {
+                        g.timer[Globals.dateChange].available = false;
+                        g.cancelTimer(this, Globals.dateChange);
                     }
 
                     intent.putExtra(COMMAND, REDRAW);

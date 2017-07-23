@@ -53,8 +53,8 @@ public class Globals extends Application {
     protected Calendar timeBeforeDisable;
     protected Calendar timeBeforeEnable;
     protected Calendar timeHolidayModeOn;
-    protected final int timerStartIndex = 1;
-    protected final int timerEndIndex = 3;
+    public static final int timerStartIndex = 1;
+    public static final int timerEndIndex = 3;
     public static final int dateChange = 0;
     protected jejTimer timer[];
 
@@ -136,6 +136,13 @@ public class Globals extends Application {
         String str = String.format("%04d/%02d/%02d %02d:%02d:%02d", date.get(YEAR), date.get(MONTH)+1, date.get(DAY_OF_MONTH), date.get(Calendar.HOUR_OF_DAY), date.get(MINUTE), date.get(SECOND));
 
         return str;
+    }
+
+    public Calendar initialCalendar() {
+        Calendar initCal = Calendar.getInstance();
+
+        initCal.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+        return initCal;
     }
 
     protected Boolean readSettingFile(Context context) {

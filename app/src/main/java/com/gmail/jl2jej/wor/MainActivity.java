@@ -199,12 +199,10 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         swTimer1.setChecked(isChecked);
-                        ag.timer[1].cameraDisable = isChecked;
-                        ag.timer[1].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
-                        if (ag.timer[1].available == true) {
-                            ag.setNormalTimer(mc, 1);
-                        }
-                        rewriteView();
+                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
+                        serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
+                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 1);
+                        startService(serviceIntent);
                     }
                 }
         );
@@ -215,12 +213,10 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         swTimer2.setChecked(isChecked);
-                        ag.timer[2].cameraDisable = isChecked;
-                        ag.timer[2].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
-                        if (ag.timer[2].available == true) {
-                            ag.setNormalTimer(mc, 2);
-                        }
-                        rewriteView();
+                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
+                        serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
+                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 2);
+                        startService(serviceIntent);
                     }
                 }
         );
@@ -231,12 +227,10 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         swTimer3.setChecked(isChecked);
-                        ag.timer[3].cameraDisable = isChecked;
-                        ag.timer[3].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
-                        if (ag.timer[3].available == true) {
-                            ag.setNormalTimer(mc, 3);
-                        }
-                        rewriteView();
+                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
+                        serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
+                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 3);
+                        startService(serviceIntent);
                     }
                 }
         );
@@ -312,10 +306,13 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         cbHolidayMode.setChecked(isChecked);
-                        ag.timer[dateChange].available = isChecked;
-                        if (isChecked) {
-                            ag.timeHolidayModeOn = Calendar.getInstance();
-                        }
+                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_HOLIDAY);
+                        serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
+                        startService(serviceIntent);
+//                        ag.timer[dateChange].available = isChecked;
+//                        if (isChecked) {
+//                            ag.timeHolidayModeOn = Calendar.getInstance();
+//                        }
                     }
                 }
         );
@@ -359,7 +356,7 @@ public class MainActivity extends AppCompatActivity {
         ((Switch)findViewById(R.id.changeSwitch2)).setChecked(ag.timer[2].cameraDisable);
         ((Switch)findViewById(R.id.changeSwitch3)).setChecked(ag.timer[3].cameraDisable);
 
-        ((CheckBox)findViewById(R.id.checkBoxHolidayMode)).setChecked(ag.timer[dateChange].available);
+        ((CheckBox)findViewById(R.id.checkBoxHolidayMode)).setChecked(ag.timer[Globals.dateChange].available);
         ((TextView)findViewById(R.id.textHolidayOnTime)).setText(ag.dateToString(ag.timeHolidayModeOn));
 
     }
