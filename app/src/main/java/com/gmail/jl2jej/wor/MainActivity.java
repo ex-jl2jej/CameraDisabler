@@ -1,22 +1,19 @@
 package com.gmail.jl2jej.wor;
 
 import android.app.Activity;
+import android.app.DialogFragment;
 import android.app.TimePickerDialog;
 import android.app.admin.DevicePolicyManager;
-import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Build;
 import android.os.Message;
-import android.os.Parcelable;
-import android.support.annotation.RequiresApi;
-import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.content.ComponentName;
-import android.text.method.BaseKeyListener;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -25,16 +22,6 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import java.util.Calendar;
-import static com.gmail.jl2jej.wor.Globals.dateChange;
-
-import static java.util.Calendar.DATE;
-import static java.util.Calendar.DAY_OF_MONTH;
-import static java.util.Calendar.HOUR;
-import static java.util.Calendar.MINUTE;
-import static java.util.Calendar.MONTH;
-import static java.util.Calendar.SECOND;
-import static java.util.Calendar.YEAR;
-
 
 //@RequiresApi(api = Build.VERSION_CODES.N)
 public class MainActivity extends AppCompatActivity {
@@ -46,7 +33,6 @@ public class MainActivity extends AppCompatActivity {
     private UpdateReceiver updateReceiver;
     private IntentFilter intentFilter;
 
-    //private static Intent serviceIntent = null;
     private static Globals ag = null;
     private static Context mc;
 
@@ -65,13 +51,26 @@ public class MainActivity extends AppCompatActivity {
     private final int MIN_POS = 5;
     private final int SEC_POS = 6;
 
+    //このプログラムの基本構造を示しておく。
+    // このプログラムは BackEndService をベースに動く
+    //　MainActivity　は、UIを行うが、すべての変数は、BackEndService にある。
+    // 構造は以下の通り
+    //  MainActivity
+    //    onCreate ------------> BackEndService#onStartCommand
+    //                                    ↓
+    //    updateHandler <----------- UpdateReceiver
+    // updateHandler は、MainActivityの中にあるので、UIをいじることができる。
+
     private Handler updateHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             Bundle bundle = msg.getData();
             Log.i(TAG, "updateHandler");
 
-            //String message = bundle.getString("message");
+            if (ag == null) {
+                ag = new Globals();
+            }
+
             ag.setGlobalsFromIntent(bundle);
             switch (bundle.getInt(BackEndService.COMMAND)) {
                 case BackEndService.REDRAW:
@@ -140,15 +139,13 @@ public class MainActivity extends AppCompatActivity {
                     devicePolicyManager.setCameraDisabled(tCameraReceiver, false);
                     serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_ENABLE);
                     String nt = Globals.dateToString(Calendar.getInstance());
-                    serviceIntent.putExtra(BackEndService.NOW_TIME, nt );
-                    TextView textBeforeEnable = (TextView)findViewById(R.id.textBeforeEnable);
+                    serviceIntent.putExtra(BackEndService.NOW_TIME, nt);
+                    TextView textBeforeEnable = (TextView) findViewById(R.id.textBeforeEnable);
                     textBeforeEnable.setText(nt);
                     startService(serviceIntent);
                     Log.i(TAG, "false");
                 }
             }});
-
-        //rewriteView();
 
         final CheckBox cbTimer1 = (CheckBox)findViewById(R.id.checkBoxTimer1);
         cbTimer1.setOnCheckedChangeListener(
@@ -159,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
                         serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
                         serviceIntent.putExtra(BackEndService.REQUEST_CODE, 1);
-                        serviceIntent.putExtra("CALLED", "_CBTIMER1");
+                        serviceIntent.putExtra("CALLED", "CBTIMER1");
                         startService(serviceIntent);
                       }
                 }
@@ -202,6 +199,7 @@ public class MainActivity extends AppCompatActivity {
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
                         serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
                         serviceIntent.putExtra(BackEndService.REQUEST_CODE, 1);
+                        serviceIntent.putExtra("CALLED", "swTimer1");
                         startService(serviceIntent);
                     }
                 }
@@ -309,16 +307,11 @@ public class MainActivity extends AppCompatActivity {
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_HOLIDAY);
                         serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
                         startService(serviceIntent);
-//                        ag.timer[dateChange].available = isChecked;
-//                        if (isChecked) {
-//                            ag.timeHolidayModeOn = Calendar.getInstance();
-//                        }
                     }
                 }
         );
         Log.i(TAG, "onCreate out");
     }
-
 
     public void rewriteView() {
         Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
@@ -371,6 +364,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         Log.i(TAG, "onDestroy");
         unregisterReceiver(updateReceiver);
+        ag = null;
     }
 
     @Override
@@ -383,7 +377,7 @@ public class MainActivity extends AppCompatActivity {
                     Log.i(TAG, "Administration enable FAILED!");
                 }
                 return;
-        }
+         }
         super.onActivityResult(requestCode, resultCode, intent);
     }
 }

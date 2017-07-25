@@ -6,9 +6,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
-import android.widget.TextView;
-import android.widget.Toast;
-import android.app.Activity;
 
 import java.util.Calendar;
 
@@ -39,8 +36,7 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
         serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, cameraDisable);
         serviceIntent.putExtra(BackEndService.REQUEST_CODE, requestCode);
         serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(Calendar.getInstance()));
-        if ( (oldCameraDisable == true && cameraDisable == false)
-            || (oldCameraDisable == false && cameraDisable == true) ) {
+        if (oldCameraDisable != cameraDisable ) {
             serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, true);
         } else {
             serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, false);

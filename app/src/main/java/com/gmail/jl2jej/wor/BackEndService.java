@@ -3,30 +3,29 @@ package com.gmail.jl2jej.wor;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.util.Calendar;
 
-import static android.os.SystemClock.sleep;
-
 /**
  * Created by kido on 2017/07/15.
+ * このサービスは、このアプリのデータを保持し、UIへ引き渡す役割を持っている。
+ * Activity から Intent　で情報をもらい、 UpdateReceiver を介して、Activityへ
+ * Bundleを送信する。
  */
 
 public class BackEndService extends Service {
     private final String TAG = "BackEndService";
-    public static final String COMMAND = "gCOMMAND";
-    public static final String NOW_TIME = "NOW_TIME";
-    public static final String BOOLEAN = "BOOLEAN";
-    public static final String REQUEST_CODE = "REQUEST_CODE";
-    public static final String HOUR_OF_DAY = "HOUR_OF_DAY";
-    public static final String MIN = "MIN";
-    public static final String CAMERA_DISABLE = "CAMERA_DISABLE";
-    public static final String REWRITE_REQUEST = "REWRITE_REQUEST";
+    public static final String COMMAND = "com.gmail.jl2jej.wor.COMMAND";
+    public static final String NOW_TIME = "com.gmail.jl2jej.wor.NOW_TIME";
+    public static final String BOOLEAN = "com.gmail.jl2jej.wor.BOOLEAN";
+    public static final String REQUEST_CODE = "com.gmail.jl2jej.wor.REQUEST_CODE";
+    public static final String HOUR_OF_DAY = "com.gmail.jl2jej.wor.HOUR_OF_DAY";
+    public static final String MIN = "com.gmail.jl2jej.wor.MIN";
+    public static final String CAMERA_DISABLE = "com.gmail.jl2jej.wor.CAMERA_DISABLE";
+    public static final String REWRITE_REQUEST = "com.gmail.jl2jej.wor.REWRITE_REQUEST";
     public static final String REDRAW_ACTION = "com.gmail.jl2jej.wor.REDRAW_ACTION";
     public static final int REDRAW = 1;
     public static final int ALARM_RECEIVE = 2;
@@ -39,7 +38,6 @@ public class BackEndService extends Service {
     public static final int CB_HOLIDAY = 9;
 
     private static Globals g = null;
-    private static Context mc = null;
 
     private Handler handler;
     private BackEndService context;
@@ -73,7 +71,6 @@ public class BackEndService extends Service {
             if (g.readSettingFile(this)) {
                 g.rewriteSettingFile(this);
             }
-            mc = this;
         } else {
             Log.i(TAG, "onStartCommand:g != null");
         }
@@ -196,10 +193,6 @@ public class BackEndService extends Service {
         return START_STICKY;
     }
 
-    //public void registerHandler(Handler updateHandler) {
-    //    handler = updateHandler;
-    //}
-
     protected void sendBroadCast(Intent intent) {
         Intent broadcastIntent = new Intent();
 
@@ -213,6 +206,7 @@ public class BackEndService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        g = null;
         Log.i(TAG, "onDestroy");
     }
 }

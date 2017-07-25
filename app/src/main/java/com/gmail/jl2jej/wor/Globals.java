@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -58,7 +57,6 @@ public class Globals extends Application {
     public static final int dateChange = 0;
     protected jejTimer timer[];
 
-
     protected void setTimer(Context context, Boolean cameraDisable, int requestCode, Calendar calendar) {
         Intent intent = new Intent(context.getApplicationContext(), AlarmBroadcastReceiver.class);
         intent.putExtra(BackEndService.CAMERA_DISABLE, cameraDisable);
@@ -85,9 +83,6 @@ public class Globals extends Application {
                 || ( (timer[requestCode].hourOfDay*60+timer[requestCode].min) <= (nowTime.get(Calendar.HOUR_OF_DAY)*60+nowTime.get(MINUTE)))) {
             int nowDay = targetTime.get(DAY_OF_MONTH);
             targetTime.set(DAY_OF_MONTH, nowDay + 1);
-            //Toast.makeText(that, String.format("%d:%d %d:%d", timer[requestCode].hourOfDay, timer[requestCode].min,
-            //        nowTime.get(Calendar.HOUR_OF_DAY), nowTime.get(MINUTE)), Toast.LENGTH_LONG).show();
-
         }
         targetTime.set(Calendar.HOUR_OF_DAY, timer[requestCode].hourOfDay);
         targetTime.set(MINUTE, timer[requestCode].min);
@@ -293,6 +288,7 @@ public class Globals extends Application {
 
     protected void rewriteSettingFile(Context context) {
         BufferedWriter writer = null;
+        Log.i(TAG, "rewriteSettingFile in");
         try {
             String newLine = System.getProperty("line.separator");
             writer = new BufferedWriter(new OutputStreamWriter(context.openFileOutput(settingFileName, Context.MODE_PRIVATE)));
@@ -304,7 +300,7 @@ public class Globals extends Application {
                 } else {
                     writer.write("false ");
                 }
-                if( timer[1].cameraDisable) {
+                if( timer[i].cameraDisable) {
                     writer.write("disable ");
                 } else {
                     writer.write("enable ");
@@ -329,6 +325,7 @@ public class Globals extends Application {
                 e.printStackTrace();
             }
         }
+        Log.i(TAG, "rewriteSettingFile out");
     }
 
     public Intent getIntentFromGlobals(Intent globalsIntent) {
@@ -370,7 +367,7 @@ public class Globals extends Application {
         timeHolidayModeOn = Calendar.getInstance();
         timeHolidayModeOn.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
         timer = new jejTimer[timerEndIndex+1];
-        //that = context;
+
         for (int i = 0 ; i <= timerEndIndex ; i++) {
             timer[i] = new jejTimer();
             timer[i].available = false;
