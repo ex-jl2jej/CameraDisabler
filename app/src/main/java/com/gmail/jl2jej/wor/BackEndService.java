@@ -1,7 +1,6 @@
 package com.gmail.jl2jej.wor;
 
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
@@ -146,7 +145,7 @@ public class BackEndService extends Service {
                     boolean oldCd = g.timer[Globals.dateChange].available;
                     g.timer[Globals.dateChange].available = cd;
 
-                    if (oldCd == false && cd == true) {
+                    if (!oldCd && cd) {
                         g.timeHolidayModeOn = Calendar.getInstance();
                     }
                     for (int i = Globals.timerStartIndex ; i <= Globals.timerEndIndex ; i++) {

@@ -7,10 +7,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.widget.Toast;
+
 
 /**
  * Created by kido on 2017/07/17.
+ *
  */
 
 public class UpdateReceiver extends BroadcastReceiver {

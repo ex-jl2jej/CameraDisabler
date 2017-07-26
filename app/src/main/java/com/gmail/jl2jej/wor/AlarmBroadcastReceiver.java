@@ -11,6 +11,9 @@ import java.util.Calendar;
 
 /**
  * Created by kido on 2017/07/07.
+ * タイマーアラームを受け取り
+ * カメラ機能のON/OFFを実行し
+ * 表示切替の情報をIntentに入れて、BackEndServiceを呼び出す
  */
 
 public class AlarmBroadcastReceiver extends BroadcastReceiver {
@@ -20,7 +23,7 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        devicePolicyManager = (DevicePolicyManager)context.getSystemService(context.DEVICE_POLICY_SERVICE);
+        devicePolicyManager = (DevicePolicyManager)context.getSystemService(MainActivity.DEVICE_POLICY_SERVICE);
         tCameraReceiver = new ComponentName(context, CameraReceiver.class);
         Boolean cameraDisable = intent.getBooleanExtra(BackEndService.CAMERA_DISABLE, true);
         int requestCode = intent.getIntExtra(BackEndService.REQUEST_CODE, 1);

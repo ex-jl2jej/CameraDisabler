@@ -7,6 +7,7 @@ import android.util.Log;
 
 /**
  * Created by kido on 2017/06/05.
+ * 必要なもので、特に実施することはない
  */
 
 public class CameraReceiver extends DeviceAdminReceiver {
@@ -14,11 +15,13 @@ public class CameraReceiver extends DeviceAdminReceiver {
     public void onEnabled(Context context, Intent intent) {
         //
         Log.i("CameraReceiver", "enable");
+        super.onEnabled(context, intent);
     }
 
     @Override
     public void onDisabled(Context context, Intent intent) {
         //
         Log.i("CameraReceiver", "disable");
+        super.onDisabled(context, intent);
     }
 }
