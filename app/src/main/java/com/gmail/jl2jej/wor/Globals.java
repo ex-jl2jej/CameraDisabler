@@ -291,7 +291,7 @@ public class Globals extends Application {
     public boolean isInitial() {
         return isInitialValue;
     }
-    
+
     protected void rewriteSettingFile(Context context) {
         BufferedWriter writer = null;
         Log.i(TAG, "rewriteSettingFile in");
