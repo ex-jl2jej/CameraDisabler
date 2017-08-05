@@ -134,12 +134,10 @@ public class BackEndService extends Service {
                     if (g.timer[requestCode].available) {
                         g.setNormalTimer(this, requestCode);
                     }
-                    if (CameraDisablerLifecycleHandler.isApplicationVisible()) {
-                        sendIntent.putExtra(COMMAND, REDRAW_TP);
-                        sendIntent.putExtra(REQUEST_CODE, requestCode);
-                        sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                        sendBroadCast(sendIntent);
-                    }
+                    sendIntent.putExtra(COMMAND, REDRAW_TP);
+                    sendIntent.putExtra(REQUEST_CODE, requestCode);
+                    sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                    sendBroadCast(sendIntent);
                     break;
                 case SW_TIMER:
                     Log.i(TAG, "SW_TIMER");
@@ -155,12 +153,10 @@ public class BackEndService extends Service {
                     if (g.timer[requestCode].available) {
                         g.setNormalTimer(this, requestCode);
                     }
-                    if (CameraDisablerLifecycleHandler.isApplicationVisible()) {
-                        sendIntent.putExtra(COMMAND, REDRAW_BS);
-                        sendIntent.putExtra(REQUEST_CODE, requestCode);
-                        sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                        sendBroadCast(sendIntent);
-                    }
+                    sendIntent.putExtra(COMMAND, REDRAW_BS);
+                    sendIntent.putExtra(REQUEST_CODE, requestCode);
+                    sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                    sendBroadCast(sendIntent);
                     break;
                 case CB_HOLIDAY:
                     Log.i(TAG, "CB_HOLIDAY");
@@ -175,11 +171,9 @@ public class BackEndService extends Service {
                         g.setNormalTimer(this, i);
                     }
                     g.setNormalTimer(this, Globals.dateChange);
-                    if (CameraDisablerLifecycleHandler.isApplicationVisible()) {
-                        sendIntent.putExtra(COMMAND, REDRAW_CBH);
-                        sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                        sendBroadCast(sendIntent);
-                    }
+                    sendIntent.putExtra(COMMAND, REDRAW_CBH);
+                    sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                    sendBroadCast(sendIntent);
                     break;
                 case REDRAW:
                     Log.i(TAG, "REDRAW");
@@ -205,12 +199,10 @@ public class BackEndService extends Service {
                         g.timer[Globals.dateChange].available = false;
                         g.cancelTimer(this, Globals.dateChange);
                     }
-
-                    if (CameraDisablerLifecycleHandler.isApplicationVisible()) {
-                        sendIntent.putExtra(COMMAND, REDRAW);
-                        sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                        sendBroadCast(sendIntent);
-                    }
+                    Log.i(TAG, "alarm redraw broadcast");
+                    sendIntent.putExtra(COMMAND, REDRAW);
+                    sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                    sendBroadCast(sendIntent);
                     break;
             }
         }

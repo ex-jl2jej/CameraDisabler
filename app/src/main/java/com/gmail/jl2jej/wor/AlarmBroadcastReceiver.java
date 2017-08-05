@@ -41,8 +41,10 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
         serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(Calendar.getInstance()));
         if (oldCameraDisable != cameraDisable ) {
             serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, true);
+            Log.i(TAG, "REWRITE REQUEST true");
         } else {
             serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, false);
+            Log.i(TAG, "REWRITE REQUEST false");
         }
 
          context.startService(serviceIntent);
