@@ -12,4 +12,7 @@
     <string name="settingFileName">setting.txt</string>
     <string name="holidayOnTime">前回ONにした時刻</string>
     <string name="dontDisableCamera">今日はカメラを無効にしない</string>
+    <string name="timer1">timer 1</string>
+    <string name="timer2">timer 2</string>
+    <string name="timer3">timer 3</string>
 </resources>

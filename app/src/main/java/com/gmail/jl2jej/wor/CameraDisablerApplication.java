@@ -4,6 +4,7 @@ import android.app.Application;
 
 /**
  * Created by kido on 2017/08/05.
+ * アプリ状態取得用
  */
 
 public class CameraDisablerApplication extends Application {

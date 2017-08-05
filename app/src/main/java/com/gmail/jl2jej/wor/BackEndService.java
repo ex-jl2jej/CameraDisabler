@@ -40,6 +40,7 @@ public class BackEndService extends Service {
     public static final int REDRAW_TBE = 12;
     public static final int REDRAW_TP = 13;
     public static final int REDRAW_CBH = 14;
+    public static final int REDRAW_BS = 15;
 
     private static Globals g = null;
 
@@ -96,10 +97,6 @@ public class BackEndService extends Service {
                     break;
                 case START_ACTIVITY:
                     g.readSettingFile(this);
-                    sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                    sendIntent.putExtra(COMMAND, REDRAW);
-                    Log.i(TAG, "START_ACTIVITY");
-                    sendBroadCast(sendIntent);
                     break;
                 case TIME_BEFORE_DISABLE:
                     g.timeBeforeDisable = g.parseDateString(intent.getStringExtra(NOW_TIME));
@@ -137,21 +134,32 @@ public class BackEndService extends Service {
                     if (g.timer[requestCode].available) {
                         g.setNormalTimer(this, requestCode);
                     }
-                    sendIntent.putExtra(COMMAND, REDRAW_TP);
-                    sendIntent.putExtra(REQUEST_CODE, requestCode);
-                    sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(sendIntent);
+                    if (CameraDisablerLifecycleHandler.isApplicationVisible()) {
+                        sendIntent.putExtra(COMMAND, REDRAW_TP);
+                        sendIntent.putExtra(REQUEST_CODE, requestCode);
+                        sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                        sendBroadCast(sendIntent);
+                    }
                     break;
                 case SW_TIMER:
                     Log.i(TAG, "SW_TIMER");
                     requestCode = intent.getIntExtra(REQUEST_CODE, 1);
                     cd = intent.getBooleanExtra(CAMERA_DISABLE, true);
                     if (g.timer[requestCode].cameraDisable != cd) {
+                        Log.i(TAG, "Switch changed");
                         g.timer[requestCode].beforeStart = g.initialCalendar();
+                    } else {
+                        Log.i(TAG, "Switch is same");
                     }
                     g.timer[requestCode].cameraDisable = cd;
                     if (g.timer[requestCode].available) {
                         g.setNormalTimer(this, requestCode);
+                    }
+                    if (CameraDisablerLifecycleHandler.isApplicationVisible()) {
+                        sendIntent.putExtra(COMMAND, REDRAW_BS);
+                        sendIntent.putExtra(REQUEST_CODE, requestCode);
+                        sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                        sendBroadCast(sendIntent);
                     }
                     break;
                 case CB_HOLIDAY:
@@ -220,7 +228,6 @@ public class BackEndService extends Service {
         Log.i(TAG, "sendBroadCast");
         broadcastIntent.setAction(REDRAW_ACTION);
         g.getIntentFromGlobals(broadcastIntent);
-        Log.i(TAG, "TP1:" + g.timer[1].timeInDay);
         getBaseContext().sendBroadcast(broadcastIntent);
     }
 

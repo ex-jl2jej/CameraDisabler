@@ -1,15 +1,11 @@
 package com.gmail.jl2jej.wor;
 
 import android.app.Activity;
-import android.app.DialogFragment;
 import android.app.TimePickerDialog;
 import android.app.admin.DevicePolicyManager;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Message;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
@@ -30,7 +26,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "CameraDisable";
     private DevicePolicyManager devicePolicyManager;
     private ComponentName tCameraReceiver;
-    private Boolean tCameraActive;
 
     private UpdateReceiver updateReceiver;
 
@@ -79,17 +74,22 @@ public class MainActivity extends AppCompatActivity {
                     Log.i(TAG, "REDRAW_CBH");
                     rewriteView(BackEndService.REDRAW_CBH);
                     break;
+                case BackEndService.REDRAW_BS:
+                    Log.i(TAG, "REDRAW_BS");
+                    rewriteView(BackEndService.REDRAW_BS, requestCode );
+                    break;
             }
         }
     };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Boolean tCameraActive;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         Log.i(TAG, "onCreate in");
-        //初期値を入れた g を作っておく。
+        //ファイルを読んだアクティビティ側のGlobals である ag を作っておく。
         ag = new Globals();
         ag.readSettingFile(getBaseContext());
 
@@ -119,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(intent, 1);
         }
 
+        //一番上の直接操作スイッチをセットする。
         Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
         if (devicePolicyManager.getCameraDisabled(tCameraReceiver)) {
             directSwitch.setChecked(true);
@@ -126,6 +127,10 @@ public class MainActivity extends AppCompatActivity {
             directSwitch.setChecked(false);
         }
 
+        //画面を設定通りにする
+        rewriteView();
+
+        //各ボタン等のリスナー設定
         directSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked ) {
@@ -372,24 +377,24 @@ public class MainActivity extends AppCompatActivity {
         }
 
         TextView textBeforeDisable = (TextView)findViewById(R.id.textBeforeDisable);
-        textBeforeDisable.setText(ag.dateToString(ag.timeBeforeDisable));
-        Log.i(TAG, "rewriteView:timeBeforeDisable:"+ag.dateToString(ag.timeBeforeDisable));
+        textBeforeDisable.setText(Globals.dateToString(ag.timeBeforeDisable));
+        Log.i(TAG, "rewriteView:timeBeforeDisable:"+Globals.dateToString(ag.timeBeforeDisable));
 
         TextView textBeforeEnable = (TextView)findViewById(R.id.textBeforeEnable);
-        textBeforeEnable.setText(ag.dateToString(ag.timeBeforeEnable));
-        Log.i(TAG, "rewriteView:timeBeforeEnable:"+ag.dateToString(ag.timeBeforeEnable));
+        textBeforeEnable.setText(Globals.dateToString(ag.timeBeforeEnable));
+        Log.i(TAG, "rewriteView:timeBeforeEnable:"+Globals.dateToString(ag.timeBeforeEnable));
 
         ((TextView)findViewById(R.id.textTimer1)).setText(ag.timer[1].timeInDay);
         ((TextView)findViewById(R.id.textTimer2)).setText(ag.timer[2].timeInDay);
         ((TextView)findViewById(R.id.textTimer3)).setText(ag.timer[3].timeInDay);
 
-        ((TextView)findViewById(R.id.textBeforeTimer1)).setText(ag.dateToString(ag.timer[1].beforeStart));
-        ((TextView)findViewById(R.id.textBeforeTimer2)).setText(ag.dateToString(ag.timer[2].beforeStart));
-        ((TextView)findViewById(R.id.textBeforeTimer3)).setText(ag.dateToString(ag.timer[3].beforeStart));
+        ((TextView)findViewById(R.id.textBeforeTimer1)).setText(Globals.dateToString(ag.timer[1].beforeStart));
+        ((TextView)findViewById(R.id.textBeforeTimer2)).setText(Globals.dateToString(ag.timer[2].beforeStart));
+        ((TextView)findViewById(R.id.textBeforeTimer3)).setText(Globals.dateToString(ag.timer[3].beforeStart));
 
-        ((TextView)findViewById(R.id.textAfterTimer1)).setText(ag.dateToString(ag.timer[1].afterStart));
-        ((TextView)findViewById(R.id.textAfterTimer2)).setText(ag.dateToString(ag.timer[2].afterStart));
-        ((TextView)findViewById(R.id.textAfterTimer3)).setText(ag.dateToString(ag.timer[3].afterStart));
+        ((TextView)findViewById(R.id.textAfterTimer1)).setText(Globals.dateToString(ag.timer[1].afterStart));
+        ((TextView)findViewById(R.id.textAfterTimer2)).setText(Globals.dateToString(ag.timer[2].afterStart));
+        ((TextView)findViewById(R.id.textAfterTimer3)).setText(Globals.dateToString(ag.timer[3].afterStart));
 
         CheckBox cb = (CheckBox)findViewById(R.id.checkBoxTimer1);
         if (cb.isChecked() != ag.timer[1].available) {
@@ -424,7 +429,7 @@ public class MainActivity extends AppCompatActivity {
         if (cb.isChecked() != ag.timer[dateChange].available) {
             cb.setChecked(ag.timer[dateChange].available);
         }
-        ((TextView)findViewById(R.id.textHolidayOnTime)).setText(ag.dateToString(ag.timeHolidayModeOn));
+        ((TextView)findViewById(R.id.textHolidayOnTime)).setText(Globals.dateToString(ag.timeHolidayModeOn));
 
     }
     public void rewriteView(int command, int requestCode) {
@@ -435,20 +440,34 @@ public class MainActivity extends AppCompatActivity {
                 switch (requestCode) {
                     case 1:
                         ((TextView) findViewById(R.id.textTimer1)).setText(ag.timer[1].timeInDay);
-                        ((TextView)findViewById(R.id.textAfterTimer1)).setText(ag.dateToString(ag.timer[1].afterStart));
-                        ((TextView)findViewById(R.id.textBeforeTimer1)).setText(ag.dateToString(ag.timer[1].beforeStart));
+                        ((TextView)findViewById(R.id.textAfterTimer1)).setText(Globals.dateToString(ag.timer[1].afterStart));
+                        ((TextView)findViewById(R.id.textBeforeTimer1)).setText(Globals.dateToString(ag.timer[1].beforeStart));
                         break;
                     case 2:
                         ((TextView) findViewById(R.id.textTimer2)).setText(ag.timer[2].timeInDay);
-                        ((TextView)findViewById(R.id.textAfterTimer2)).setText(ag.dateToString(ag.timer[2].afterStart));
-                        ((TextView)findViewById(R.id.textBeforeTimer2)).setText(ag.dateToString(ag.timer[2].beforeStart));
+                        ((TextView)findViewById(R.id.textAfterTimer2)).setText(Globals.dateToString(ag.timer[2].afterStart));
+                        ((TextView)findViewById(R.id.textBeforeTimer2)).setText(Globals.dateToString(ag.timer[2].beforeStart));
                         break;
                     case 3:
                         ((TextView) findViewById(R.id.textTimer3)).setText(ag.timer[3].timeInDay);
-                        ((TextView)findViewById(R.id.textAfterTimer3)).setText(ag.dateToString(ag.timer[3].afterStart));
-                        ((TextView)findViewById(R.id.textBeforeTimer3)).setText(ag.dateToString(ag.timer[3].beforeStart));
+                        ((TextView)findViewById(R.id.textAfterTimer3)).setText(Globals.dateToString(ag.timer[3].afterStart));
+                        ((TextView)findViewById(R.id.textBeforeTimer3)).setText(Globals.dateToString(ag.timer[3].beforeStart));
                         break;
                 }
+                break;
+            case BackEndService.REDRAW_BS:
+                switch (requestCode) {
+                    case 1:
+                        ((TextView)findViewById(R.id.textBeforeTimer1)).setText(Globals.dateToString(ag.timer[1].beforeStart));
+                        break;
+                    case 2:
+                        ((TextView)findViewById(R.id.textBeforeTimer2)).setText(Globals.dateToString(ag.timer[2].beforeStart));
+                        break;
+                    case 3:
+                        ((TextView)findViewById(R.id.textBeforeTimer3)).setText(Globals.dateToString(ag.timer[3].beforeStart));
+                        break;
+                }
+                break;
         }
     }
 
@@ -457,19 +476,19 @@ public class MainActivity extends AppCompatActivity {
         switch (command) {
             case BackEndService.REDRAW_TBD:
                 TextView textBeforeDisable = (TextView) findViewById(R.id.textBeforeDisable);
-                textBeforeDisable.setText(ag.dateToString(ag.timeBeforeDisable));
-                Log.i(TAG, "rewriteViewPart:timeBeforeDisable:" + ag.dateToString(ag.timeBeforeDisable));
+                textBeforeDisable.setText(Globals.dateToString(ag.timeBeforeDisable));
+                Log.i(TAG, "rewriteViewPart:timeBeforeDisable:" + Globals.dateToString(ag.timeBeforeDisable));
                 break;
             case BackEndService.REDRAW_TBE:
                 TextView textBeforeEnable = (TextView) findViewById(R.id.textBeforeEnable);
-                textBeforeEnable.setText(ag.dateToString(ag.timeBeforeEnable));
-                Log.i(TAG, "rewriteViewPart:timeBeforeEnable:" + ag.dateToString(ag.timeBeforeEnable));
+                textBeforeEnable.setText(Globals.dateToString(ag.timeBeforeEnable));
+                Log.i(TAG, "rewriteViewPart:timeBeforeEnable:" + Globals.dateToString(ag.timeBeforeEnable));
                 break;
             case BackEndService.REDRAW_CBH:
-                ((TextView) findViewById(R.id.textHolidayOnTime)).setText(ag.dateToString(ag.timeHolidayModeOn));
-                ((TextView)findViewById(R.id.textAfterTimer1)).setText(ag.dateToString(ag.timer[1].afterStart));
-                ((TextView)findViewById(R.id.textAfterTimer2)).setText(ag.dateToString(ag.timer[2].afterStart));
-                ((TextView)findViewById(R.id.textAfterTimer3)).setText(ag.dateToString(ag.timer[3].afterStart));
+                ((TextView) findViewById(R.id.textHolidayOnTime)).setText(Globals.dateToString(ag.timeHolidayModeOn));
+                ((TextView)findViewById(R.id.textAfterTimer1)).setText(Globals.dateToString(ag.timer[1].afterStart));
+                ((TextView)findViewById(R.id.textAfterTimer2)).setText(Globals.dateToString(ag.timer[2].afterStart));
+                ((TextView)findViewById(R.id.textAfterTimer3)).setText(Globals.dateToString(ag.timer[3].afterStart));
                 Log.i(TAG, "rewriteView part CBH");
                 break;
         }

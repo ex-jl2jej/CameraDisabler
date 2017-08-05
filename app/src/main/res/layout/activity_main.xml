@@ -72,7 +72,7 @@
                 android:id="@+id/checkBoxTimer1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="timer 1" />
+                android:text="@string/timer1" />
 
             <Switch
                 android:id="@+id/changeSwitch1"
@@ -151,7 +151,7 @@
                 android:id="@+id/checkBoxTimer2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="timer 2" />
+                android:text="@string/timer2" />
 
             <Switch
                 android:id="@+id/changeSwitch2"
@@ -230,7 +230,7 @@
                 android:id="@+id/checkBoxTimer3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="timer 3" />
+                android:text="@string/timer3" />
 
             <Switch
                 android:id="@+id/changeSwitch3"
