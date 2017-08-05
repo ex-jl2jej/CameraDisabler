@@ -23,6 +23,8 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import java.util.Calendar;
 
+import static com.gmail.jl2jej.wor.Globals.dateChange;
+
 //@RequiresApi(api = Build.VERSION_CODES.N)
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "CameraDisable";
@@ -89,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "onCreate in");
         //初期値を入れた g を作っておく。
         ag = new Globals();
+        ag.readSettingFile(getBaseContext());
 
         //ハンドラーが動くようにする
         updateReceiver = new UpdateReceiver();
@@ -131,8 +134,10 @@ public class MainActivity extends AppCompatActivity {
                 if (isChecked) {
                     devicePolicyManager.setCameraDisabled(tCameraReceiver, true);
                     serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_DISABLE);
-                    String nt = Globals.dateToString(Calendar.getInstance());
+                    Calendar nowTime = Calendar.getInstance();
+                    String nt = Globals.dateToString(nowTime);
                     serviceIntent.putExtra(BackEndService.NOW_TIME, nt );
+                    ag.timeBeforeDisable = nowTime;
                     TextView textBeforeDisable = (TextView)findViewById(R.id.textBeforeDisable);
                     textBeforeDisable.setText(nt);
                     startService(serviceIntent);
@@ -140,7 +145,9 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     devicePolicyManager.setCameraDisabled(tCameraReceiver, false);
                     serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_ENABLE);
-                    String nt = Globals.dateToString(Calendar.getInstance());
+                    Calendar nowTime = Calendar.getInstance();
+                    String nt = Globals.dateToString(nowTime);
+                    ag.timeBeforeEnable = nowTime;
                     serviceIntent.putExtra(BackEndService.NOW_TIME, nt);
                     TextView textBeforeEnable = (TextView) findViewById(R.id.textBeforeEnable);
                     textBeforeEnable.setText(nt);
@@ -156,6 +163,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                         Log.i(TAG, "cbTimer1 Listener");
+                        ag.timer[1].available = isChecked;
                         cbTimer1.setChecked(isChecked);
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
                         serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
@@ -173,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                         Log.i(TAG, "cbTimer2 Listener");
+                        ag.timer[2].available = isChecked;
                         cbTimer2.setChecked(isChecked);
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
                         serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
@@ -189,6 +198,7 @@ public class MainActivity extends AppCompatActivity {
                         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                         Log.i(TAG, "cbTimer3 Listener");
                         cbTimer3.setChecked(isChecked);
+                        ag.timer[3].available = isChecked;
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
                         serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
                         serviceIntent.putExtra(BackEndService.REQUEST_CODE, 3);
@@ -205,6 +215,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                         Log.i(TAG, "swTimer1 Listener");
+                        ag.timer[1].cameraDisable = isChecked;
                         swTimer1.setChecked(isChecked);
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
                         serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
@@ -222,6 +233,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                         Log.i(TAG, "swTimer2 Listener");
+                        ag.timer[2].cameraDisable = isChecked;
                         swTimer2.setChecked(isChecked);
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
                         serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
@@ -238,6 +250,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                         Log.i(TAG, "swTimer3 Listener");
+                        ag.timer[3].cameraDisable = isChecked;
                         swTimer3.setChecked(isChecked);
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
                         serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
@@ -253,6 +266,9 @@ public class MainActivity extends AppCompatActivity {
                     public void onTimeSet(TimePicker view, int hourOfDay, int min) {
                         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                         Log.i(TAG, "timePicker1 Listener");
+                        ag.timer[1].hourOfDay = hourOfDay;
+                        ag.timer[1].min = min;
+                        ag.timer[1].int2str();
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_PICK );
                         serviceIntent.putExtra(BackEndService.HOUR_OF_DAY, hourOfDay);
                         serviceIntent.putExtra(BackEndService.MIN, min);
@@ -267,7 +283,6 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(View v) {
                         Log.i(TAG, "tpdTimer1.show");
                         tpdTimer1.show();
-
                     }
                 }
         );
@@ -278,6 +293,9 @@ public class MainActivity extends AppCompatActivity {
                     public void onTimeSet(TimePicker view, int hourOfDay, int min) {
                         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                         Log.i(TAG, "timePicker2 Listener");
+                        ag.timer[2].hourOfDay = hourOfDay;
+                        ag.timer[2].min = min;
+                        ag.timer[2].int2str();
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_PICK );
                         serviceIntent.putExtra(BackEndService.HOUR_OF_DAY, hourOfDay);
                         serviceIntent.putExtra(BackEndService.MIN, min);
@@ -302,6 +320,9 @@ public class MainActivity extends AppCompatActivity {
                     public void onTimeSet(TimePicker view, int hourOfDay, int min) {
                         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                         Log.i(TAG, "timePicker3 Listener");
+                        ag.timer[3].hourOfDay = hourOfDay;
+                        ag.timer[3].min = min;
+                        ag.timer[3].int2str();
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_PICK );
                         serviceIntent.putExtra(BackEndService.HOUR_OF_DAY, hourOfDay);
                         serviceIntent.putExtra(BackEndService.MIN, min);
@@ -328,6 +349,7 @@ public class MainActivity extends AppCompatActivity {
                         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                         Log.i(TAG, "cbHolidayMode Listener");
                         cbHolidayMode.setChecked(isChecked);
+                        ag.timer[dateChange].available = isChecked;
                         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_HOLIDAY);
                         serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
                         startService(serviceIntent);
@@ -339,6 +361,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void rewriteView() {
+        if (ag == null) {
+            Log.i(TAG, "rewriteView:ag == null");
+        }
         Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
         if (devicePolicyManager.getCameraDisabled(tCameraReceiver)) {
             directSwitch.setChecked(true);
@@ -396,8 +421,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         cb = (CheckBox)findViewById(R.id.checkBoxHolidayMode);
-        if (cb.isChecked() != ag.timer[Globals.dateChange].available) {
-            cb.setChecked(ag.timer[Globals.dateChange].available);
+        if (cb.isChecked() != ag.timer[dateChange].available) {
+            cb.setChecked(ag.timer[dateChange].available);
         }
         ((TextView)findViewById(R.id.textHolidayOnTime)).setText(ag.dateToString(ag.timeHolidayModeOn));
 

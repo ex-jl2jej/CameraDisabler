@@ -64,6 +64,8 @@ public class Globals extends Application {
         intent.putExtra(BackEndService.REQUEST_CODE, requestCode);
         PendingIntent sender = PendingIntent.getBroadcast(context.getApplicationContext(), requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+        this.timer[requestCode].isSet = true;
+
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(context.ALARM_SERVICE);
         alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
     }
@@ -72,6 +74,7 @@ public class Globals extends Application {
         Intent intent = new Intent(context.getApplicationContext(), AlarmBroadcastReceiver.class);
         PendingIntent sender = PendingIntent.getBroadcast(context.getApplicationContext(), requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+        this.timer[requestCode].isSet = false;
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(context.ALARM_SERVICE);
         alarmManager.cancel(sender);
     }

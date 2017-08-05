@@ -146,7 +146,7 @@ public class BackEndService extends Service {
                     Log.i(TAG, "SW_TIMER");
                     requestCode = intent.getIntExtra(REQUEST_CODE, 1);
                     cd = intent.getBooleanExtra(CAMERA_DISABLE, true);
-                    if (g.isInitial() == false && g.timer[requestCode].cameraDisable != cd) {
+                    if (g.timer[requestCode].cameraDisable != cd) {
                         g.timer[requestCode].beforeStart = g.initialCalendar();
                     }
                     g.timer[requestCode].cameraDisable = cd;
@@ -227,7 +227,7 @@ public class BackEndService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        g = null;
         Log.i(TAG, "onDestroy");
+        g = null;
     }
 }
