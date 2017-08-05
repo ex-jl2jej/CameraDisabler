@@ -470,7 +470,7 @@ public class MainActivity extends AppCompatActivity {
                 ((TextView)findViewById(R.id.textAfterTimer1)).setText(ag.dateToString(ag.timer[1].afterStart));
                 ((TextView)findViewById(R.id.textAfterTimer2)).setText(ag.dateToString(ag.timer[2].afterStart));
                 ((TextView)findViewById(R.id.textAfterTimer3)).setText(ag.dateToString(ag.timer[3].afterStart));
-                Log.i(TAG, "rewiteView part CBH");
+                Log.i(TAG, "rewriteView part CBH");
                 break;
         }
     }

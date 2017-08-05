@@ -6,7 +6,7 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
         tools:context="com.gmail.jl2jej.wor.MainActivity">
 
@@ -303,7 +303,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/holidayMargin"
-            android:text="今日はカメラを無効にしない" />
+            android:text="@string/dontDisableCamera" />
 
         <LinearLayout
             android:layout_width="match_parent"

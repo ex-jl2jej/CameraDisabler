@@ -1,7 +1,6 @@
 package com.gmail.jl2jej.wor;
 
 import android.app.AlarmManager;
-import android.app.Application;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -28,11 +27,11 @@ import static java.util.Calendar.YEAR;
  * Created by kido on 2017/07/10.
  */
 
-public class Globals extends Application {
+public class Globals {
     private static final String TAG = "Globals";
     // 日付の初期値
     private final int INIT_YEAR = 1970;
-    private final int INIT_MONTH = 1;
+    private final int INIT_MONTH = 0;
     private final int INIT_DAY = 1;
     private final int INIT_HOUR = 9;
     private final int INIT_MIN = 0;

@@ -11,4 +11,5 @@
     <string name="time">00:00</string>
     <string name="settingFileName">setting.txt</string>
     <string name="holidayOnTime">前回ONにした時刻</string>
+    <string name="dontDisableCamera">今日はカメラを無効にしない</string>
 </resources>

@@ -32,7 +32,7 @@ public class CameraDisablerLifecycleHandler implements Application.ActivityLifec
     @Override
     public void onActivityPaused(Activity activity ) {
         ++paused;
-        Log.i(TAG, "puased");
+        Log.i(TAG, "paused");
     }
 
     @Override
