@@ -35,6 +35,11 @@ public class BackEndService extends Service {
     public static final int TIME_PICK = 7;
     public static final int SW_TIMER = 8;
     public static final int CB_HOLIDAY = 9;
+    public static final int STARTUP = 10;
+    public static final int REDRAW_TBD = 11;
+    public static final int REDRAW_TBE = 12;
+    public static final int REDRAW_TP = 13;
+    public static final int REDRAW_CBH = 14;
 
     private static Globals g = null;
 
@@ -63,6 +68,7 @@ public class BackEndService extends Service {
         int requestCode = 1;
         Boolean cd = true;
         super.onStartCommand(intent, flags, startId);
+        Intent sendIntent = new Intent();
 
         if (g == null) {
             Log.i(TAG, "onStartCommand:g == null");
@@ -75,31 +81,42 @@ public class BackEndService extends Service {
         }
 
         if (intent != null) {
-            Log.i(TAG, "onStartCommand:" + intent.getStringExtra("CALLED")+ ":startID:" + Integer.toString(startId));
+            if (intent.getStringExtra("CALLED") != null) {
+                Log.i(TAG, "onStartCommand:" + intent.getStringExtra("CALLED") + ":startID:" + Integer.toString(startId));
+            }
 
             switch (intent.getIntExtra(COMMAND, REDRAW)) {
+                case STARTUP:
+                    for (int i = 0 ; i <= Globals.timerEndIndex ; i++) {
+                        if (g.timer[i].available) {
+                            g.setNormalTimer(this, i);
+                        }
+                    }
+                    Log.i(TAG, "StartUp out");
+                    break;
                 case START_ACTIVITY:
                     g.readSettingFile(this);
-                    intent.setAction(BackEndService.REDRAW_ACTION);
-                    intent.putExtra(COMMAND, REDRAW);
+                    sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                    sendIntent.putExtra(COMMAND, REDRAW);
                     Log.i(TAG, "START_ACTIVITY");
-                    sendBroadCast(intent);
+                    sendBroadCast(sendIntent);
                     break;
                 case TIME_BEFORE_DISABLE:
                     g.timeBeforeDisable = g.parseDateString(intent.getStringExtra(NOW_TIME));
-                    intent.putExtra(COMMAND, REDRAW);
-                    intent.setAction(BackEndService.REDRAW_ACTION);
+                    sendIntent.putExtra(COMMAND, REDRAW_TBD);
+                    sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     Log.i(TAG, "TIME_BEFORE_DISABLE"+intent.getStringExtra(NOW_TIME));
-                    sendBroadCast(intent);
+                    sendBroadCast(sendIntent);
                     break;
                 case TIME_BEFORE_ENABLE:
                     g.timeBeforeEnable = g.parseDateString(intent.getStringExtra(NOW_TIME));
-                    intent.putExtra(COMMAND, REDRAW);
-                    intent.setAction(BackEndService.REDRAW_ACTION);
+                    sendIntent.putExtra(COMMAND, REDRAW_TBE);
+                    sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     Log.i(TAG, "TIME_BEFORE_ENABLE:"+intent.getStringExtra(NOW_TIME));
-                    sendBroadCast(intent);
+                    sendBroadCast(sendIntent);
                     break;
                 case CB_TIMER:
+                    Log.i(TAG, "CB_TIMER");
                     requestCode = intent.getIntExtra(REQUEST_CODE, 1);
                     if (intent.getBooleanExtra(BOOLEAN, false)) {
                         g.timer[requestCode].available = true;
@@ -108,11 +125,9 @@ public class BackEndService extends Service {
                         g.timer[requestCode].available = false;
                         g.cancelTimer(this, requestCode);
                     }
-                    intent.putExtra(COMMAND, REDRAW);
-                    intent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(intent);
                     break;
                 case TIME_PICK:
+                    Log.i(TAG, "TIME_PICK");
                     requestCode = intent.getIntExtra(REQUEST_CODE, 1);
                     int hourOfDay = intent.getIntExtra(HOUR_OF_DAY, 0);
                     int min = intent.getIntExtra(MIN, 0);
@@ -122,25 +137,25 @@ public class BackEndService extends Service {
                     if (g.timer[requestCode].available) {
                         g.setNormalTimer(this, requestCode);
                     }
-                    intent.putExtra(COMMAND, REDRAW);
-                    intent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(intent);
+                    sendIntent.putExtra(COMMAND, REDRAW_TP);
+                    sendIntent.putExtra(REQUEST_CODE, requestCode);
+                    sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                    sendBroadCast(sendIntent);
                     break;
                 case SW_TIMER:
+                    Log.i(TAG, "SW_TIMER");
                     requestCode = intent.getIntExtra(REQUEST_CODE, 1);
                     cd = intent.getBooleanExtra(CAMERA_DISABLE, true);
-                    if (g.timer[requestCode].cameraDisable != cd) {
+                    if (g.isInitial() == false && g.timer[requestCode].cameraDisable != cd) {
                         g.timer[requestCode].beforeStart = g.initialCalendar();
                     }
                     g.timer[requestCode].cameraDisable = cd;
                     if (g.timer[requestCode].available) {
                         g.setNormalTimer(this, requestCode);
                     }
-                    intent.putExtra(COMMAND, REDRAW);
-                    intent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(intent);
                     break;
                 case CB_HOLIDAY:
+                    Log.i(TAG, "CB_HOLIDAY");
                     cd = intent.getBooleanExtra(BOOLEAN, false);
                     boolean oldCd = g.timer[Globals.dateChange].available;
                     g.timer[Globals.dateChange].available = cd;
@@ -152,17 +167,20 @@ public class BackEndService extends Service {
                         g.setNormalTimer(this, i);
                     }
                     g.setNormalTimer(this, Globals.dateChange);
-
-                    intent.putExtra(COMMAND, REDRAW);
-                    intent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(intent);
+                    if (CameraDisablerLifecycleHandler.isApplicationVisible()) {
+                        sendIntent.putExtra(COMMAND, REDRAW_CBH);
+                        sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                        sendBroadCast(sendIntent);
+                    }
                     break;
                 case REDRAW:
-                    intent.putExtra(COMMAND, REDRAW);
-                    intent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(intent);
+                    Log.i(TAG, "REDRAW");
+                    sendIntent.putExtra(COMMAND, REDRAW);
+                    sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                    sendBroadCast(sendIntent);
                     break;
                 case ALARM_RECEIVE:
+                    Log.i(TAG, "ALARM_RECEIVE");
                     requestCode = intent.getIntExtra(REQUEST_CODE, 1);
                     if (requestCode != Globals.dateChange) {
                         Boolean cameraDisable = intent.getBooleanExtra(CAMERA_DISABLE, true);
@@ -180,9 +198,11 @@ public class BackEndService extends Service {
                         g.cancelTimer(this, Globals.dateChange);
                     }
 
-                    intent.putExtra(COMMAND, REDRAW);
-                    intent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(intent);
+                    if (CameraDisablerLifecycleHandler.isApplicationVisible()) {
+                        sendIntent.putExtra(COMMAND, REDRAW);
+                        sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                        sendBroadCast(sendIntent);
+                    }
                     break;
             }
         }
@@ -196,9 +216,11 @@ public class BackEndService extends Service {
         Intent broadcastIntent = new Intent();
 
         broadcastIntent.putExtra(COMMAND, intent.getIntExtra(COMMAND,REDRAW));
+        broadcastIntent.putExtra(REQUEST_CODE, intent.getIntExtra(REQUEST_CODE, 1));
         Log.i(TAG, "sendBroadCast");
         broadcastIntent.setAction(REDRAW_ACTION);
         g.getIntentFromGlobals(broadcastIntent);
+        Log.i(TAG, "TP1:" + g.timer[1].timeInDay);
         getBaseContext().sendBroadcast(broadcastIntent);
     }
 

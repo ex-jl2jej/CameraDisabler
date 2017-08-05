@@ -15,13 +15,11 @@ public class CameraReceiver extends DeviceAdminReceiver {
     public void onEnabled(Context context, Intent intent) {
         //
         Log.i("CameraReceiver", "enable");
-        super.onEnabled(context, intent);
     }
 
     @Override
     public void onDisabled(Context context, Intent intent) {
         //
         Log.i("CameraReceiver", "disable");
-        super.onDisabled(context, intent);
     }
 }

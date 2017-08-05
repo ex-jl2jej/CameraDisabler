@@ -56,6 +56,7 @@ public class Globals extends Application {
     public static final int timerEndIndex = 3;
     public static final int dateChange = 0;
     protected jejTimer timer[];
+    protected boolean isInitialValue = true;
 
     protected void setTimer(Context context, Boolean cameraDisable, int requestCode, Calendar calendar) {
         Intent intent = new Intent(context.getApplicationContext(), AlarmBroadcastReceiver.class);
@@ -283,9 +284,14 @@ public class Globals extends Application {
             }
         }
         Log.i(TAG, "readSettingFile out");
+        isInitialValue = false;
         return doRewriteFile;
     }
 
+    public boolean isInitial() {
+        return isInitialValue;
+    }
+    
     protected void rewriteSettingFile(Context context) {
         BufferedWriter writer = null;
         Log.i(TAG, "rewriteSettingFile in");
@@ -368,6 +374,7 @@ public class Globals extends Application {
         timeHolidayModeOn.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
         timer = new jejTimer[timerEndIndex+1];
 
+        isInitialValue = true;
         for (int i = 0 ; i <= timerEndIndex ; i++) {
             timer[i] = new jejTimer();
             timer[i].available = false;

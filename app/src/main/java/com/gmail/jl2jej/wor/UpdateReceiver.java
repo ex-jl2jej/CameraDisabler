@@ -15,19 +15,22 @@ import android.util.Log;
  */
 
 public class UpdateReceiver extends BroadcastReceiver {
+    private static final String TAG = "UpdateReceiver";
     public static Handler handler;
 
     @Override
     public void onReceive(Context context, Intent intent) {
         //　ここで　もらった bundle をそのまま渡すようにする
         Bundle bundle = intent.getExtras();
-        Log.i("UpdateReceiver", "_onReceive");
+        Log.i(TAG, "onReceive in");
         if (handler != null) {
             Message msg = new Message();
 
             msg.setData(bundle);
+            Log.i(TAG, "sendMessage");
             handler.sendMessage(msg);
         }
+        Log.i(TAG, "onReceive out");
     }
 
     public void registerHandler(Handler locationUpdateHandler) {
