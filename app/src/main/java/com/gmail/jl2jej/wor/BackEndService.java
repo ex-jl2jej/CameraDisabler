@@ -163,9 +163,10 @@ public class BackEndService extends Service {
                     cd = intent.getBooleanExtra(BOOLEAN, false);
                     boolean oldCd = g.timer[Globals.dateChange].available;
                     g.timer[Globals.dateChange].available = cd;
+                    Calendar nt = g.parseDateString(intent.getStringExtra(NOW_TIME));
 
                     if (!oldCd && cd) {
-                        g.timeHolidayModeOn = Calendar.getInstance();
+                        g.timeHolidayModeOn = nt;
                     }
                     for (int i = Globals.timerStartIndex ; i <= Globals.timerEndIndex ; i++) {
                         g.setNormalTimer(this, i);

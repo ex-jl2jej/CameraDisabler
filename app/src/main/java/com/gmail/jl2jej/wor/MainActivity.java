@@ -31,6 +31,50 @@ public class MainActivity extends AppCompatActivity {
 
     private static Globals ag = null;
 
+    private CompoundButton.OnCheckedChangeListener directSwitchListener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked ) {
+            Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+            Log.i(TAG, "directSwitch changed");
+            if (isChecked) {
+                devicePolicyManager.setCameraDisabled(tCameraReceiver, true);
+                serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_DISABLE);
+                Calendar nowTime = Calendar.getInstance();
+                String nt = Globals.dateToString(nowTime);
+                serviceIntent.putExtra(BackEndService.NOW_TIME, nt );
+                ag.timeBeforeDisable = nowTime;
+                TextView textBeforeDisable = (TextView)findViewById(R.id.textBeforeDisable);
+                textBeforeDisable.setText(nt);
+                startService(serviceIntent);
+                Log.i(TAG, "true");
+            } else {
+                devicePolicyManager.setCameraDisabled(tCameraReceiver, false);
+                serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_ENABLE);
+                Calendar nowTime = Calendar.getInstance();
+                String nt = Globals.dateToString(nowTime);
+                ag.timeBeforeEnable = nowTime;
+                serviceIntent.putExtra(BackEndService.NOW_TIME, nt);
+                TextView textBeforeEnable = (TextView) findViewById(R.id.textBeforeEnable);
+                textBeforeEnable.setText(nt);
+                startService(serviceIntent);
+                Log.i(TAG, "false");
+            }
+        }};
+
+    private CompoundButton.OnCheckedChangeListener cbHolidayModeListener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+            Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+            Log.i(TAG, "cbHolidayMode Listener");
+            ag.timer[dateChange].available = isChecked;
+            ag.timeHolidayModeOn = Calendar.getInstance();
+            serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_HOLIDAY);
+            serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
+            serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(ag.timeHolidayModeOn));
+            startService(serviceIntent);
+        }
+    };
+
     //このプログラムの基本構造を示しておく。
     // このプログラムは BackEndService をベースに動く
     //　MainActivity　は、UIを行うが、すべての変数は、BackEndService にある。
@@ -131,35 +175,7 @@ public class MainActivity extends AppCompatActivity {
         rewriteView();
 
         //各ボタン等のリスナー設定
-        directSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked ) {
-                Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
-                Log.i(TAG, "directSwitch changed");
-                if (isChecked) {
-                    devicePolicyManager.setCameraDisabled(tCameraReceiver, true);
-                    serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_DISABLE);
-                    Calendar nowTime = Calendar.getInstance();
-                    String nt = Globals.dateToString(nowTime);
-                    serviceIntent.putExtra(BackEndService.NOW_TIME, nt );
-                    ag.timeBeforeDisable = nowTime;
-                    TextView textBeforeDisable = (TextView)findViewById(R.id.textBeforeDisable);
-                    textBeforeDisable.setText(nt);
-                    startService(serviceIntent);
-                    Log.i(TAG, "true");
-                } else {
-                    devicePolicyManager.setCameraDisabled(tCameraReceiver, false);
-                    serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_ENABLE);
-                    Calendar nowTime = Calendar.getInstance();
-                    String nt = Globals.dateToString(nowTime);
-                    ag.timeBeforeEnable = nowTime;
-                    serviceIntent.putExtra(BackEndService.NOW_TIME, nt);
-                    TextView textBeforeEnable = (TextView) findViewById(R.id.textBeforeEnable);
-                    textBeforeEnable.setText(nt);
-                    startService(serviceIntent);
-                    Log.i(TAG, "false");
-                }
-            }});
+        directSwitch.setOnCheckedChangeListener(directSwitchListener);
 
         final CheckBox cbTimer1 = (CheckBox)findViewById(R.id.checkBoxTimer1);
         cbTimer1.setOnCheckedChangeListener(
@@ -347,20 +363,7 @@ public class MainActivity extends AppCompatActivity {
         );
 
         final CheckBox cbHolidayMode = (CheckBox)findViewById(R.id.checkBoxHolidayMode);
-        cbHolidayMode.setOnCheckedChangeListener(
-                new CompoundButton.OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
-                        Log.i(TAG, "cbHolidayMode Listener");
-                        cbHolidayMode.setChecked(isChecked);
-                        ag.timer[dateChange].available = isChecked;
-                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_HOLIDAY);
-                        serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
-                        startService(serviceIntent);
-                    }
-                }
-        );
+        cbHolidayMode.setOnCheckedChangeListener(cbHolidayModeListener);
         Log.i(TAG, "onCreate out");
     }
 
@@ -370,11 +373,13 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "rewriteView:ag == null");
         }
         Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
+        directSwitch.setOnCheckedChangeListener(null);
         if (devicePolicyManager.getCameraDisabled(tCameraReceiver)) {
             directSwitch.setChecked(true);
         } else {
             directSwitch.setChecked(false);
         }
+        directSwitch.setOnCheckedChangeListener(directSwitchListener);
 
         TextView textBeforeDisable = (TextView)findViewById(R.id.textBeforeDisable);
         textBeforeDisable.setText(Globals.dateToString(ag.timeBeforeDisable));
@@ -426,12 +431,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         cb = (CheckBox)findViewById(R.id.checkBoxHolidayMode);
-        if (cb.isChecked() != ag.timer[dateChange].available) {
-            cb.setChecked(ag.timer[dateChange].available);
-        }
+        cb.setOnCheckedChangeListener(null);
+        cb.setChecked(ag.timer[dateChange].available);
+        cb.setOnCheckedChangeListener(cbHolidayModeListener);
         ((TextView)findViewById(R.id.textHolidayOnTime)).setText(Globals.dateToString(ag.timeHolidayModeOn));
 
     }
+
     public void rewriteView(int command, int requestCode) {
         Log.i(TAG, "rewriteView part with request code");
 
