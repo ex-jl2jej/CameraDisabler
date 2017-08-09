@@ -64,6 +64,14 @@ public class BackEndService extends Service {
         return null;
     }
 
+    private void resettingTimer() {
+        for (int i = 0 ; i <= Globals.timerEndIndex ; i++) {
+            if (g.timer[i].available) {
+                g.setNormalTimer(this, i);
+            }
+        }
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         int requestCode = 1;
@@ -88,15 +96,12 @@ public class BackEndService extends Service {
 
             switch (intent.getIntExtra(COMMAND, REDRAW)) {
                 case STARTUP:
-                    for (int i = 0 ; i <= Globals.timerEndIndex ; i++) {
-                        if (g.timer[i].available) {
-                            g.setNormalTimer(this, i);
-                        }
-                    }
                     Log.i(TAG, "StartUp out");
+                    resettingTimer();
                     break;
                 case START_ACTIVITY:
                     g.readSettingFile(this);
+                    resettingTimer();
                     break;
                 case TIME_BEFORE_DISABLE:
                     g.timeBeforeDisable = g.parseDateString(intent.getStringExtra(NOW_TIME));
@@ -168,10 +173,7 @@ public class BackEndService extends Service {
                     if (!oldCd && cd) {
                         g.timeHolidayModeOn = nt;
                     }
-                    for (int i = Globals.timerStartIndex ; i <= Globals.timerEndIndex ; i++) {
-                        g.setNormalTimer(this, i);
-                    }
-                    g.setNormalTimer(this, Globals.dateChange);
+                    resettingTimer();
                     sendIntent.putExtra(COMMAND, REDRAW_CBH);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     sendBroadCast(sendIntent);

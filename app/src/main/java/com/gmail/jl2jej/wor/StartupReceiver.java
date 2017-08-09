@@ -15,7 +15,7 @@ public class StartupReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.i(TAG, "onReceive");
+        Log.i(TAG, "onReceive:"+intent.getAction());
         Intent intentService = new Intent(context, BackEndService.class);
         intentService.putExtra(BackEndService.COMMAND, BackEndService.STARTUP);
         context.startService(intentService);
