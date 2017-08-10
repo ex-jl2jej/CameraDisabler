@@ -93,10 +93,6 @@ public class Globals {
                 targetTime.set(Calendar.HOUR_OF_DAY, 0);
                 targetTime.set(Calendar.MINUTE, 0);
                 targetTime.set(SECOND, 0);
-                this.timer[dateChange].afterStart = (Calendar)targetTime.clone();
-                timer[dateChange].hourOfDay = 0;
-                timer[dateChange].min = 0;
-                timer[dateChange].int2str();
             } else {
                 targetTime = (Calendar)timer[dateChange].afterStart.clone();
                 targetTime.set(Calendar.HOUR_OF_DAY, timer[requestCode].hourOfDay);
