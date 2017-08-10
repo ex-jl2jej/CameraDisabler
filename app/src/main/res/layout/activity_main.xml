@@ -298,12 +298,28 @@
 
         <!-- holiday mode -->
 
-        <CheckBox
-            android:id="@+id/checkBoxHolidayMode"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/holidayMargin"
-            android:text="@string/dontDisableCamera" />
+            android:orientation="horizontal">
+            <CheckBox
+                android:id="@+id/checkBoxHolidayMode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="" />
+
+            <TextView
+                android:id="@+id/textAfterTimer0"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/dateAndTime"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/timerNoActivate"/>
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"

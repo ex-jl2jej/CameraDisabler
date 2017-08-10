@@ -26,6 +26,7 @@ public class BackEndService extends Service {
     public static final String CAMERA_DISABLE = "com.gmail.jl2jej.wor.CAMERA_DISABLE";
     public static final String REWRITE_REQUEST = "com.gmail.jl2jej.wor.REWRITE_REQUEST";
     public static final String REDRAW_ACTION = "com.gmail.jl2jej.wor.REDRAW_ACTION";
+    public static final String TARGET_DATE="com.gmail.jl2jej.wor.TARGET_DATE";
     public static final int REDRAW = 1;
     public static final int ALARM_RECEIVE = 2;
     public static final int START_ACTIVITY = 3;
@@ -41,6 +42,8 @@ public class BackEndService extends Service {
     public static final int REDRAW_TP = 13;
     public static final int REDRAW_CBH = 14;
     public static final int REDRAW_BS = 15;
+    public static final int DATE_PICK = 16;
+    public static final int REDRAW_DP = 17;
 
     private static Globals g = null;
 
@@ -68,6 +71,8 @@ public class BackEndService extends Service {
         for (int i = 0 ; i <= Globals.timerEndIndex ; i++) {
             if (g.timer[i].available) {
                 g.setNormalTimer(this, i);
+            } else {
+                g.cancelTimer(this, i);
             }
         }
     }
@@ -160,6 +165,17 @@ public class BackEndService extends Service {
                     }
                     sendIntent.putExtra(COMMAND, REDRAW_BS);
                     sendIntent.putExtra(REQUEST_CODE, requestCode);
+                    sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                    sendBroadCast(sendIntent);
+                    break;
+                case DATE_PICK:
+                    Log.i(TAG, "DATE_PICK");
+                    requestCode = intent.getIntExtra(REQUEST_CODE, Globals.dateChange);
+                    g.timer[Globals.dateChange].afterStart = g.parseDateString(intent.getStringExtra(TARGET_DATE));
+                    if (g.timer[Globals.dateChange].available) {
+                        resettingTimer();
+                    }
+                    sendIntent.putExtra(COMMAND, REDRAW_DP);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     sendBroadCast(sendIntent);
                     break;

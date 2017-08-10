@@ -1,6 +1,7 @@
 package com.gmail.jl2jej.wor;
 
 import android.app.Activity;
+import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.app.admin.DevicePolicyManager;
 import android.content.Intent;
@@ -10,13 +11,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.content.ComponentName;
+import android.text.method.BaseKeyListener;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.DatePicker;
 import android.widget.Switch;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.TimePicker;
+
+import java.lang.ref.ReferenceQueue;
 import java.util.Calendar;
 
 import static com.gmail.jl2jej.wor.Globals.dateChange;
@@ -121,6 +126,10 @@ public class MainActivity extends AppCompatActivity {
                 case BackEndService.REDRAW_BS:
                     Log.i(TAG, "REDRAW_BS");
                     rewriteView(BackEndService.REDRAW_BS, requestCode );
+                    break;
+                case BackEndService.REDRAW_DP:
+                    Log.i(TAG, "REDRAW_DP");
+                    rewriteView(BackEndService.REDRAW_DP);
                     break;
             }
         }
@@ -364,6 +373,31 @@ public class MainActivity extends AppCompatActivity {
 
         final CheckBox cbHolidayMode = (CheckBox)findViewById(R.id.checkBoxHolidayMode);
         cbHolidayMode.setOnCheckedChangeListener(cbHolidayModeListener);
+
+        final DatePickerDialog dpdTimer0 = new DatePickerDialog(this,
+                new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker datePicker, int year, int month, int dt) {
+                        Log.i(TAG, "datePicker0 Listener");
+                        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+                        ag.timer[dateChange].afterStart.set(year, month, dt, 0, 0, 0);
+                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.DATE_PICK);
+                        serviceIntent.putExtra(BackEndService.TARGET_DATE, Globals.dateToString(ag.timer[dateChange].afterStart));
+                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, dateChange);
+                        startService(serviceIntent);
+                    }
+                }, ag.timer[dateChange].afterStart.get(Calendar.YEAR),
+                ag.timer[dateChange].afterStart.get(Calendar.MONTH),
+                ag.timer[dateChange].afterStart.get(Calendar.DAY_OF_MONTH));
+        final TextView tmTimer0 = (TextView)findViewById(R.id.textAfterTimer0);
+        tmTimer0.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        dpdTimer0.show();
+                    }
+                }
+        );
         Log.i(TAG, "onCreate out");
     }
 
@@ -434,8 +468,8 @@ public class MainActivity extends AppCompatActivity {
         cb.setOnCheckedChangeListener(null);
         cb.setChecked(ag.timer[dateChange].available);
         cb.setOnCheckedChangeListener(cbHolidayModeListener);
+        ((TextView)findViewById(R.id.textAfterTimer0)).setText(Globals.dateToString(ag.timer[dateChange].afterStart));
         ((TextView)findViewById(R.id.textHolidayOnTime)).setText(Globals.dateToString(ag.timeHolidayModeOn));
-
     }
 
     public void rewriteView(int command, int requestCode) {
@@ -474,7 +508,7 @@ public class MainActivity extends AppCompatActivity {
                         break;
                 }
                 break;
-        }
+       }
     }
 
     public void rewriteView(int command) {
@@ -492,11 +526,19 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case BackEndService.REDRAW_CBH:
                 ((TextView) findViewById(R.id.textHolidayOnTime)).setText(Globals.dateToString(ag.timeHolidayModeOn));
+                ((TextView)findViewById(R.id.textAfterTimer0)).setText(Globals.dateToString(ag.timer[Globals.dateChange].afterStart));
                 ((TextView)findViewById(R.id.textAfterTimer1)).setText(Globals.dateToString(ag.timer[1].afterStart));
                 ((TextView)findViewById(R.id.textAfterTimer2)).setText(Globals.dateToString(ag.timer[2].afterStart));
                 ((TextView)findViewById(R.id.textAfterTimer3)).setText(Globals.dateToString(ag.timer[3].afterStart));
                 Log.i(TAG, "rewriteView part CBH");
                 break;
+            case BackEndService.REDRAW_DP:
+                ((TextView)findViewById(R.id.textAfterTimer0)).setText(Globals.dateToString(ag.timer[Globals.dateChange].afterStart));
+                ((TextView)findViewById(R.id.textAfterTimer1)).setText(Globals.dateToString(ag.timer[1].afterStart));
+                ((TextView)findViewById(R.id.textAfterTimer2)).setText(Globals.dateToString(ag.timer[2].afterStart));
+                ((TextView)findViewById(R.id.textAfterTimer3)).setText(Globals.dateToString(ag.timer[3].afterStart));
+                break;
+
         }
     }
 

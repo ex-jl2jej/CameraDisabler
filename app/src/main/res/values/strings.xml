@@ -7,11 +7,12 @@
     <string name="beforeEnable">前回有効化時刻</string>
     <string name="lastStartTime">前回起動時刻</string>
     <string name="nextStartTime">次回起動時刻</string>
-    <string name="dateAndTime">2017/06/11 00:00 SUN</string>
+    <string name="dateAndTime">1970/01/01 09:00</string>
     <string name="time">00:00</string>
     <string name="settingFileName">setting.txt</string>
     <string name="holidayOnTime">前回ONにした時刻</string>
     <string name="dontDisableCamera">今日はカメラを無効にしない</string>
+    <string name="timerNoActivate">まで、タイマーを起動しない</string>
     <string name="timer1">timer 1</string>
     <string name="timer2">timer 2</string>
     <string name="timer3">timer 3</string>

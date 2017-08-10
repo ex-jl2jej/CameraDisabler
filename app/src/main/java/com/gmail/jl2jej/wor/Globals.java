@@ -82,14 +82,40 @@ public class Globals {
         Calendar nowTime = Calendar.getInstance();
         Calendar targetTime = Calendar.getInstance();
 
-        if (timer[dateChange].available
-                || ( (timer[requestCode].hourOfDay*60+timer[requestCode].min) <= (nowTime.get(Calendar.HOUR_OF_DAY)*60+nowTime.get(MINUTE)))) {
-            int nowDay = targetTime.get(DAY_OF_MONTH);
-            targetTime.set(DAY_OF_MONTH, nowDay + 1);
+        if (timer[dateChange].available) {
+            if (requestCode == dateChange) {
+                if (nowTime.after(this.timer[dateChange].afterStart)) {
+                    int nowDay = targetTime.get(DAY_OF_MONTH);
+                    targetTime.set(DAY_OF_MONTH, nowDay+1);
+                } else {
+                    targetTime = (Calendar)this.timer[dateChange].afterStart.clone();
+                }
+                targetTime.set(Calendar.HOUR_OF_DAY, 0);
+                targetTime.set(Calendar.MINUTE, 0);
+                targetTime.set(SECOND, 0);
+                this.timer[dateChange].afterStart = (Calendar)targetTime.clone();
+                timer[dateChange].hourOfDay = 0;
+                timer[dateChange].min = 0;
+                timer[dateChange].int2str();
+            } else {
+                targetTime = (Calendar)timer[dateChange].afterStart.clone();
+                targetTime.set(Calendar.HOUR_OF_DAY, timer[requestCode].hourOfDay);
+                targetTime.set(MINUTE, timer[requestCode].min);
+                targetTime.set(SECOND, 0);
+            }
+        } else {
+            if (requestCode == dateChange) {
+                targetTime = (Calendar)timer[dateChange].afterStart.clone();
+            } else {
+                if ((timer[requestCode].hourOfDay * 60 + timer[requestCode].min) <= (nowTime.get(Calendar.HOUR_OF_DAY) * 60 + nowTime.get(MINUTE))) {
+                    int nowDay = targetTime.get(DAY_OF_MONTH);
+                    targetTime.set(DAY_OF_MONTH, nowDay + 1);
+                }
+                targetTime.set(Calendar.HOUR_OF_DAY, timer[requestCode].hourOfDay);
+                targetTime.set(MINUTE, timer[requestCode].min);
+                targetTime.set(SECOND, 0);
+            }
         }
-        targetTime.set(Calendar.HOUR_OF_DAY, timer[requestCode].hourOfDay);
-        targetTime.set(MINUTE, timer[requestCode].min);
-        targetTime.set(SECOND, 0);
 
         return targetTime;
     }
