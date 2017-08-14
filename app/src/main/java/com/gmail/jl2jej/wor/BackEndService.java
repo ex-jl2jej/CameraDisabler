@@ -1,7 +1,12 @@
 package com.gmail.jl2jej.wor;
 
 import android.app.Service;
+import android.app.admin.DevicePolicyManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
@@ -44,11 +49,15 @@ public class BackEndService extends Service {
     public static final int REDRAW_BS = 15;
     public static final int DATE_PICK = 16;
     public static final int REDRAW_DP = 17;
+    public static final int SCREEN_ON = 18;
 
     private static Globals g = null;
 
     private Handler handler;
-    private BackEndService context;
+    private static BroadcastReceiver screenOnReceiver = null;
+    private int sid;
+    //private static int registerSid;
+    //private BackEndService context;
 
     @Override
     public void onCreate() {
@@ -60,7 +69,7 @@ public class BackEndService extends Service {
             Log.i(TAG, "onCreate:g != null");
         }
 
-     }
+      }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -83,15 +92,16 @@ public class BackEndService extends Service {
         Boolean cd = true;
         super.onStartCommand(intent, flags, startId);
         Intent sendIntent = new Intent();
+        sid = startId;
 
         if (g == null) {
-            Log.i(TAG, "onStartCommand:g == null");
+            Log.i(TAG, "onStartCommand:g == null:startID:" + Integer.toString(startId));
             g = new Globals();
             if (g.readSettingFile(this)) {
                 g.rewriteSettingFile(this);
             }
         } else {
-            Log.i(TAG, "onStartCommand:g != null");
+            Log.i(TAG, "onStartCommand:g != null:startID:" + Integer.toString(startId));
         }
 
         if (intent != null) {
@@ -101,13 +111,14 @@ public class BackEndService extends Service {
 
             switch (intent.getIntExtra(COMMAND, REDRAW)) {
                 case STARTUP:
-                    Log.i(TAG, "StartUp out");
+                    Log.i(TAG, "StartUp out:startID:" + Integer.toString(startId));
                     resettingTimer();
                     break;
                 case START_ACTIVITY:
+                    Log.i(TAG, "START_ACTIVITY:startID:" + Integer.toString(startId));
                     g.readSettingFile(this);
                     resettingTimer();
-                    break;
+                     break;
                 case TIME_BEFORE_DISABLE:
                     g.timeBeforeDisable = g.parseDateString(intent.getStringExtra(NOW_TIME));
                     sendIntent.putExtra(COMMAND, REDRAW_TBD);
@@ -223,9 +234,52 @@ public class BackEndService extends Service {
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     sendBroadCast(sendIntent);
                     break;
+                case SCREEN_ON:
+                    DevicePolicyManager devicePolicyManager = null;
+                    ComponentName tCameraReceiver = null;
+
+                    if (devicePolicyManager == null) {
+                        Log.i(TAG, "devicePolicyManger == null");
+                        devicePolicyManager = (DevicePolicyManager)getBaseContext().getSystemService(MainActivity.DEVICE_POLICY_SERVICE);
+                        tCameraReceiver = new ComponentName(getBaseContext(), CameraReceiver.class);
+                    }
+
+                    for (int i = 0; i <= Globals.timerEndIndex; i++) {
+                        Calendar nowTime = Calendar.getInstance();
+                        if (g.timer[i].available && nowTime.after(g.timer[i].afterStart)) {
+                            if (i == Globals.dateChange) {
+                                Log.i(TAG, "screen on: holday mode cancel");
+                                g.cancelTimer(getBaseContext(), i);
+                                g.timer[i].available = false;
+                            } else {
+                                Log.i(TAG, "screen on: change camera disable:" + g.timer[i].cameraDisable);
+                                devicePolicyManager.setCameraDisabled(tCameraReceiver, g.timer[i].cameraDisable);
+                                g.setNormalTimer(getBaseContext(), i);
+                            }
+                        } else {
+                            Log.i(TAG, "timer is not late:" + i);
+                        }
+                    }
+                    break;
             }
         }
         g.rewriteSettingFile(this);
+        if (screenOnReceiver == null) {
+            Log.i(TAG, "ScreenOnReceiver:Register:sid=" + sid);
+            IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_ON);
+            screenOnReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    Log.i(TAG, "screenOnReceiver:received");
+                    Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+                    serviceIntent.putExtra(COMMAND, SCREEN_ON);
+                    startService(serviceIntent);
+                }
+            };
+            getBaseContext().getApplicationContext().registerReceiver(screenOnReceiver, intentFilter);
+            //registerSid = sid;
+        }
+        Log.i(TAG, "stopSelf:sid=" + sid);
         stopSelf();
         Log.i(TAG, "onStartCommand out");
         return START_STICKY;
@@ -245,7 +299,7 @@ public class BackEndService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.i(TAG, "onDestroy");
+        Log.i(TAG, "onDestroy:sid =" + Integer.toString(sid));
         g = null;
     }
 }

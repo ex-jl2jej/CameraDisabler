@@ -30,7 +30,9 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
         Boolean oldCameraDisable = devicePolicyManager.getCameraDisabled(tCameraReceiver);
 
          Log.i(TAG, "onReceive");
-        devicePolicyManager.setCameraDisabled(tCameraReceiver, cameraDisable);
+        if (requestCode != Globals.dateChange) {
+            devicePolicyManager.setCameraDisabled(tCameraReceiver, cameraDisable);
+        }
 
         Intent serviceIntent = new Intent(context, BackEndService.class);
 
