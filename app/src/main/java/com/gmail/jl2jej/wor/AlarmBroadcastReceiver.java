@@ -1,6 +1,7 @@
 package com.gmail.jl2jej.wor;
 
 import android.app.admin.DevicePolicyManager;
+import android.app.backup.BackupAgent;
 import android.content.ComponentName;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -30,23 +31,27 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
         Boolean oldCameraDisable = devicePolicyManager.getCameraDisabled(tCameraReceiver);
 
          Log.i(TAG, "onReceive");
-        if (requestCode != Globals.dateChange) {
+        if (requestCode != Globals.dateChange && requestCode != Globals.numOfIntervalTimer) {
             devicePolicyManager.setCameraDisabled(tCameraReceiver, cameraDisable);
         }
 
         Intent serviceIntent = new Intent(context, BackEndService.class);
 
-        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.ALARM_RECEIVE);
-        serviceIntent.putExtra("CALLED", "AlarmBroadCast");
-        serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, cameraDisable);
-        serviceIntent.putExtra(BackEndService.REQUEST_CODE, requestCode);
-        serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(Calendar.getInstance()));
-        if (oldCameraDisable != cameraDisable ) {
-            serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, true);
-            Log.i(TAG, "REWRITE REQUEST true");
+        if (requestCode == Globals.numOfIntervalTimer) {
+            serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
         } else {
-            serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, false);
-            Log.i(TAG, "REWRITE REQUEST false");
+            serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.ALARM_RECEIVE);
+            serviceIntent.putExtra("CALLED", "AlarmBroadCast");
+            serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, cameraDisable);
+            serviceIntent.putExtra(BackEndService.REQUEST_CODE, requestCode);
+            serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(Calendar.getInstance()));
+            if (oldCameraDisable != cameraDisable) {
+                serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, true);
+                Log.i(TAG, "REWRITE REQUEST true");
+            } else {
+                serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, false);
+                Log.i(TAG, "REWRITE REQUEST false");
+            }
         }
 
          context.startService(serviceIntent);

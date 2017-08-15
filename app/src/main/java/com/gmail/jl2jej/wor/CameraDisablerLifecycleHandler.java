@@ -19,10 +19,13 @@ public class CameraDisablerLifecycleHandler implements Application.ActivityLifec
 
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+        Log.i(TAG, "created");
     }
 
     @Override
-    public void onActivityDestroyed(Activity activity) {}
+    public void onActivityDestroyed(Activity activity) {
+        Log.i(TAG, "destroyed");
+    }
 
     @Override
     public void onActivityResumed(Activity activity) {
@@ -38,6 +41,7 @@ public class CameraDisablerLifecycleHandler implements Application.ActivityLifec
 
     @Override
     public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+        Log.i(TAG, "saveInstanceState");
     }
 
     @Override

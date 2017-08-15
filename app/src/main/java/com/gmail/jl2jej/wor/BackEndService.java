@@ -1,5 +1,7 @@
 package com.gmail.jl2jej.wor;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.app.admin.DevicePolicyManager;
 import android.content.BroadcastReceiver;
@@ -10,6 +12,7 @@ import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.Calendar;
 
@@ -86,6 +89,64 @@ public class BackEndService extends Service {
         }
     }
 
+    private void lateTimerActivate() {
+        DevicePolicyManager devicePolicyManager = null;
+        ComponentName tCameraReceiver = null;
+        Calendar nowTime = Calendar.getInstance();
+        int[] order = new int[Globals.timerEndIndex+1];
+
+        devicePolicyManager = (DevicePolicyManager)getBaseContext().getSystemService(MainActivity.DEVICE_POLICY_SERVICE);
+        tCameraReceiver = new ComponentName(getBaseContext(), CameraReceiver.class);
+
+        for (int i = 0 ; i <= Globals.timerEndIndex ; i++) {
+            order[i] = i;
+        }
+        for (int i = 0 ; i < Globals.timerEndIndex ; i++) {
+            for (int j = i+1 ; j <= Globals.timerEndIndex ; j++) {
+                if (g.timer[order[i]].afterStart.after(g.timer[order[j]].afterStart)) {
+                    int k;
+                    k = order[i];
+                    order[i] = order[j];
+                    order[j] = k;
+                }
+            }
+        }
+
+        for (int j = 0 ; j <= Globals.timerEndIndex; j++) {
+            int i = order[j];
+            if (g.timer[i].available && nowTime.after(g.timer[i].afterStart)) {
+                if (i == Globals.dateChange) {
+                    Log.i(TAG, "late check: holiday mode cancel");
+                    g.cancelTimer(getBaseContext(), i);
+                    g.timer[i].available = false;
+                } else {
+                    Log.i(TAG, "late check: change camera disable:" + g.timer[i].cameraDisable);
+                    devicePolicyManager.setCameraDisabled(tCameraReceiver, g.timer[i].cameraDisable);
+                    if (g.timer[i].cameraDisable) {
+                        g.timeBeforeDisable = nowTime;
+                    } else {
+                        g.timeBeforeEnable = nowTime;
+                    }
+                    g.timer[i].beforeStart = nowTime;
+                    g.setNormalTimer(getBaseContext(), i);
+                }
+            } else {
+                Log.i(TAG, "timer is not late:" + i);
+            }
+        }
+    }
+
+    private void intervalTimerSet() {
+        final long intervalTimeMillis = 10 * 60 * 1000;
+        Intent intent = new Intent(getBaseContext().getApplicationContext(), AlarmBroadcastReceiver.class);
+        intent.putExtra(BackEndService.REQUEST_CODE, Globals.numOfIntervalTimer);
+
+        PendingIntent sender = PendingIntent.getBroadcast(getBaseContext().getApplicationContext(), Globals.numOfIntervalTimer, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        AlarmManager alarmManager = (AlarmManager)getBaseContext().getSystemService(getBaseContext().ALARM_SERVICE);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, Calendar.getInstance().getTimeInMillis(), intervalTimeMillis, sender);
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         int requestCode = 1;
@@ -118,7 +179,9 @@ public class BackEndService extends Service {
                     Log.i(TAG, "START_ACTIVITY:startID:" + Integer.toString(startId));
                     g.readSettingFile(this);
                     resettingTimer();
-                     break;
+                    lateTimerActivate();
+                    intervalTimerSet();
+                    break;
                 case TIME_BEFORE_DISABLE:
                     g.timeBeforeDisable = g.parseDateString(intent.getStringExtra(NOW_TIME));
                     sendIntent.putExtra(COMMAND, REDRAW_TBD);
@@ -235,49 +298,32 @@ public class BackEndService extends Service {
                     sendBroadCast(sendIntent);
                     break;
                 case SCREEN_ON:
-                    DevicePolicyManager devicePolicyManager = null;
-                    ComponentName tCameraReceiver = null;
-
-                    if (devicePolicyManager == null) {
-                        Log.i(TAG, "devicePolicyManger == null");
-                        devicePolicyManager = (DevicePolicyManager)getBaseContext().getSystemService(MainActivity.DEVICE_POLICY_SERVICE);
-                        tCameraReceiver = new ComponentName(getBaseContext(), CameraReceiver.class);
-                    }
-
-                    for (int i = 0; i <= Globals.timerEndIndex; i++) {
-                        Calendar nowTime = Calendar.getInstance();
-                        if (g.timer[i].available && nowTime.after(g.timer[i].afterStart)) {
-                            if (i == Globals.dateChange) {
-                                Log.i(TAG, "screen on: holday mode cancel");
-                                g.cancelTimer(getBaseContext(), i);
-                                g.timer[i].available = false;
-                            } else {
-                                Log.i(TAG, "screen on: change camera disable:" + g.timer[i].cameraDisable);
-                                devicePolicyManager.setCameraDisabled(tCameraReceiver, g.timer[i].cameraDisable);
-                                g.setNormalTimer(getBaseContext(), i);
-                            }
-                        } else {
-                            Log.i(TAG, "timer is not late:" + i);
-                        }
-                    }
+                    lateTimerActivate();
+                    Toast.makeText(getBaseContext(), "SCREEN_ON running", Toast.LENGTH_LONG).show();
                     break;
             }
         }
         g.rewriteSettingFile(this);
-        if (screenOnReceiver == null) {
+        if (screenOnReceiver == null) { // SCREEN_ONを捕まえるレシーバを登録
+            //この登録は、サービスを stopSelf させても生きている模様
             Log.i(TAG, "ScreenOnReceiver:Register:sid=" + sid);
             IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_ON);
             screenOnReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
+                    // 受信したら、SCREEN_ON をCOMMANDにして、サービスを起動するだけにする。
                     Log.i(TAG, "screenOnReceiver:received");
+                    Toast.makeText(getBaseContext(), "Received", Toast.LENGTH_LONG).show();
                     Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                     serviceIntent.putExtra(COMMAND, SCREEN_ON);
                     startService(serviceIntent);
                 }
+
+                public void onDestroy() {
+
+                }
             };
             getBaseContext().getApplicationContext().registerReceiver(screenOnReceiver, intentFilter);
-            //registerSid = sid;
         }
         Log.i(TAG, "stopSelf:sid=" + sid);
         stopSelf();

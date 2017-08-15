@@ -552,10 +552,14 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         Log.i(TAG, "onDestroy");
         unregisterReceiver(updateReceiver);
         ag = null;
+        super.onDestroy();
+
+        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
+        startService(serviceIntent);
     }
 
     @Override
