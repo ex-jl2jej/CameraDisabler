@@ -345,7 +345,9 @@ public class BackEndService extends Service {
                         sendIntent.setAction(BackEndService.REDRAW_ACTION);
                         sendBroadCast(sendIntent);
                     }
-                    Toast.makeText(getBaseContext(), "CameraDisabler:check timers", Toast.LENGTH_LONG).show();
+                    if (g.timer[1].timeInDay.equals("07:01")) {
+                        Toast.makeText(getBaseContext(), "CameraDisabler:check timers", Toast.LENGTH_LONG).show();
+                    }
                     break;
             }
         }
