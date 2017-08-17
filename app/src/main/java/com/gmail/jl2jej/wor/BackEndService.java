@@ -59,8 +59,6 @@ public class BackEndService extends Service {
     private Handler handler;
     private static BroadcastReceiver screenOnReceiver = null;
     private int sid;
-    //private static int registerSid;
-    //private BackEndService context;
 
     @Override
     public void onCreate() {
@@ -79,29 +77,33 @@ public class BackEndService extends Service {
         return null;
     }
 
-    private void resettingTimer() {
+    private boolean resettingTimer() {
+        boolean isChanged = false;
+
         for (int i = 0 ; i <= Globals.timerEndIndex ; i++) {
             if (g.timer[i].available) {
-                g.setNormalTimer(this, i);
+                isChanged = g.setNormalTimer(this, i);
             } else {
-                g.cancelTimer(this, i);
+                isChanged = g.cancelTimer(this, i);
             }
         }
+        return isChanged;
     }
 
-    private void lateTimerActivate() {
+    private boolean lateTimerActivate() { // 遅延しているタイマーがあれば是正 是正したかどうかを返す
         DevicePolicyManager devicePolicyManager = null;
         ComponentName tCameraReceiver = null;
         Calendar nowTime = Calendar.getInstance();
-        int[] order = new int[Globals.timerEndIndex+1];
+        int[] order = new int[Globals.timerEndIndex+1]; // タイマーを時刻の順序に実行するための配列
+        boolean isChanged = false;
 
         devicePolicyManager = (DevicePolicyManager)getBaseContext().getSystemService(MainActivity.DEVICE_POLICY_SERVICE);
         tCameraReceiver = new ComponentName(getBaseContext(), CameraReceiver.class);
 
-        for (int i = 0 ; i <= Globals.timerEndIndex ; i++) {
+        for (int i = 0 ; i <= Globals.timerEndIndex ; i++) { // まずは、番号通りとしておく
             order[i] = i;
         }
-        for (int i = 0 ; i < Globals.timerEndIndex ; i++) {
+        for (int i = 0 ; i < Globals.timerEndIndex ; i++) { //　単純なバブルソート
             for (int j = i+1 ; j <= Globals.timerEndIndex ; j++) {
                 if (g.timer[order[i]].afterStart.after(g.timer[order[j]].afterStart)) {
                     int k;
@@ -114,7 +116,7 @@ public class BackEndService extends Service {
 
         for (int j = 0 ; j <= Globals.timerEndIndex; j++) {
             int i = order[j];
-            if (g.timer[i].available && nowTime.after(g.timer[i].afterStart)) {
+            if (g.timer[i].available && nowTime.after(g.timer[i].afterStart)) { // タイマーが有効　かつ　遅延
                 if (i == Globals.dateChange) {
                     Log.i(TAG, "late check: holiday mode cancel");
                     g.cancelTimer(getBaseContext(), i);
@@ -130,12 +132,21 @@ public class BackEndService extends Service {
                     g.timer[i].beforeStart = nowTime;
                     g.setNormalTimer(getBaseContext(), i);
                 }
+                isChanged = true;
             } else {
                 Log.i(TAG, "timer is not late:" + i);
             }
         }
+        return isChanged;
     }
 
+    /*
+     * ユーザーや、システムからサービスが停止されることがあり、そうなると、タイマーの遅延が
+     * 見逃され、希望した時刻にカメラが無効にできない可能性があるため、
+     * １０分
+     * ごとに起動されるタイマーを用意する。
+     * requestCode を numOfIntervalTimer == 100 としてアラームを起動
+     */
     private void intervalTimerSet() {
         final long intervalTimeMillis = 10 * 60 * 1000;
         Intent intent = new Intent(getBaseContext().getApplicationContext(), AlarmBroadcastReceiver.class);
@@ -150,7 +161,9 @@ public class BackEndService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         int requestCode = 1;
-        Boolean cd = true;
+        Boolean cd = true;          // CameraDisable のテンポラリ変数
+        Boolean isChanged = false;  // 処理をする中で状態が変わったかどうか
+        Calendar tmp;                   //比較用
         super.onStartCommand(intent, flags, startId);
         Intent sendIntent = new Intent();
         sid = startId;
@@ -158,8 +171,10 @@ public class BackEndService extends Service {
         if (g == null) {
             Log.i(TAG, "onStartCommand:g == null:startID:" + Integer.toString(startId));
             g = new Globals();
-            if (g.readSettingFile(this)) {
-                g.rewriteSettingFile(this);
+            g.readSettingFile(this);
+            if (g.readSettingFile(this)) { // 2度読みしてメモリとの相違があったということは、設定ファイルが壊れている
+                Log.i(TAG, "Setting file is broken");
+                isChanged = true;
             }
         } else {
             Log.i(TAG, "onStartCommand:g != null:startID:" + Integer.toString(startId));
@@ -171,89 +186,113 @@ public class BackEndService extends Service {
             }
 
             switch (intent.getIntExtra(COMMAND, REDRAW)) {
-                case STARTUP:
+                case STARTUP: // アプリ再起動時
                     Log.i(TAG, "StartUp out:startID:" + Integer.toString(startId));
-                    resettingTimer();
+                    isChanged = resettingTimer();
                     break;
-                case START_ACTIVITY:
+                case START_ACTIVITY: // アクティビティが起動されて最初のサービス呼び出し
                     Log.i(TAG, "START_ACTIVITY:startID:" + Integer.toString(startId));
-                    g.readSettingFile(this);
-                    resettingTimer();
-                    lateTimerActivate();
+                    isChanged = g.readSettingFile(this);
+                    isChanged |= resettingTimer();
+                    isChanged |= lateTimerActivate();
                     intervalTimerSet();
                     break;
-                case TIME_BEFORE_DISABLE:
-                    g.timeBeforeDisable = g.parseDateString(intent.getStringExtra(NOW_TIME));
+                case TIME_BEFORE_DISABLE: // カメラ有効無効スイッチが　カメラ無効に操作された
+                    tmp =  g.parseDateString(intent.getStringExtra(NOW_TIME));
+                    if (!tmp.equals(g.timeBeforeDisable)) {
+                        g.timeBeforeDisable = tmp;
+                         isChanged = true;
+                    }
                     sendIntent.putExtra(COMMAND, REDRAW_TBD);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                    Log.i(TAG, "TIME_BEFORE_DISABLE"+intent.getStringExtra(NOW_TIME));
+                    Log.i(TAG, "TIME_BEFORE_DISABLE" + intent.getStringExtra(NOW_TIME));
                     sendBroadCast(sendIntent);
                     break;
-                case TIME_BEFORE_ENABLE:
-                    g.timeBeforeEnable = g.parseDateString(intent.getStringExtra(NOW_TIME));
+                case TIME_BEFORE_ENABLE: // カメラ有効無効スイッチが　カメラ有効に操作された
+                    tmp = g.parseDateString(intent.getStringExtra(NOW_TIME));
+                    if (!tmp.equals(g.timeBeforeEnable)) {
+                        g.timeBeforeEnable = tmp;
+                        isChanged = true;
+                    }
                     sendIntent.putExtra(COMMAND, REDRAW_TBE);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                    Log.i(TAG, "TIME_BEFORE_ENABLE:"+intent.getStringExtra(NOW_TIME));
+                    Log.i(TAG, "TIME_BEFORE_ENABLE:" + intent.getStringExtra(NOW_TIME));
                     sendBroadCast(sendIntent);
                     break;
-                case CB_TIMER:
+                case CB_TIMER: // タイマーのチェックボックスが操作された
                     Log.i(TAG, "CB_TIMER");
                     requestCode = intent.getIntExtra(REQUEST_CODE, 1);
                     if (intent.getBooleanExtra(BOOLEAN, false)) {
-                        g.timer[requestCode].available = true;
-                        g.setNormalTimer(this, requestCode);
+                        if (!g.timer[requestCode].available) {
+                            g.timer[requestCode].available = true;
+                            isChanged = true;
+                        }
+                        isChanged |= g.setNormalTimer(this, requestCode);
                     } else {
-                        g.timer[requestCode].available = false;
-                        g.cancelTimer(this, requestCode);
+                        if (g.timer[requestCode].available) {
+                            g.timer[requestCode].available = false;
+                            isChanged = true;
+                        }
+                        isChanged |= g.cancelTimer(this, requestCode);
                     }
                     break;
-                case TIME_PICK:
+                case TIME_PICK: // タイマーの起動時間が変更された
                     Log.i(TAG, "TIME_PICK");
                     requestCode = intent.getIntExtra(REQUEST_CODE, 1);
                     int hourOfDay = intent.getIntExtra(HOUR_OF_DAY, 0);
                     int min = intent.getIntExtra(MIN, 0);
-                    g.timer[requestCode].hourOfDay = hourOfDay;
-                    g.timer[requestCode].min = min;
+                    if (g.timer[requestCode].hourOfDay != hourOfDay
+                        || g.timer[requestCode].min != min) {
+                        g.timer[requestCode].hourOfDay = hourOfDay;
+                        g.timer[requestCode].min = min;
+                        isChanged = true;
+                    }
                     g.timer[requestCode].int2str();
                     if (g.timer[requestCode].available) {
-                        g.setNormalTimer(this, requestCode);
+                        isChanged |= g.setNormalTimer(this, requestCode);
                     }
                     sendIntent.putExtra(COMMAND, REDRAW_TP);
                     sendIntent.putExtra(REQUEST_CODE, requestCode);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     sendBroadCast(sendIntent);
                     break;
-                case SW_TIMER:
+                case SW_TIMER: // タイマーの　カメラ有効無効スイッチが操作された
                     Log.i(TAG, "SW_TIMER");
                     requestCode = intent.getIntExtra(REQUEST_CODE, 1);
                     cd = intent.getBooleanExtra(CAMERA_DISABLE, true);
                     if (g.timer[requestCode].cameraDisable != cd) {
                         Log.i(TAG, "Switch changed");
                         g.timer[requestCode].beforeStart = g.initialCalendar();
+                        g.timer[requestCode].cameraDisable = cd;
+                        isChanged = true;
                     } else {
                         Log.i(TAG, "Switch is same");
                     }
-                    g.timer[requestCode].cameraDisable = cd;
+
                     if (g.timer[requestCode].available) {
-                        g.setNormalTimer(this, requestCode);
+                        isChanged |= g.setNormalTimer(this, requestCode);
                     }
                     sendIntent.putExtra(COMMAND, REDRAW_BS);
                     sendIntent.putExtra(REQUEST_CODE, requestCode);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     sendBroadCast(sendIntent);
                     break;
-                case DATE_PICK:
+                case DATE_PICK: // ホリデーモードの日付が変更された
                     Log.i(TAG, "DATE_PICK");
                     requestCode = intent.getIntExtra(REQUEST_CODE, Globals.dateChange);
-                    g.timer[Globals.dateChange].afterStart = g.parseDateString(intent.getStringExtra(TARGET_DATE));
+                    tmp = g.parseDateString(intent.getStringExtra(TARGET_DATE));
+                    if (!tmp.equals(g.timer[Globals.dateChange].afterStart)) {
+                        g.timer[Globals.dateChange].afterStart = tmp;
+                        isChanged = true;
+                    }
                     if (g.timer[Globals.dateChange].available) {
-                        resettingTimer();
+                        isChanged |= resettingTimer();
                     }
                     sendIntent.putExtra(COMMAND, REDRAW_DP);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     sendBroadCast(sendIntent);
                     break;
-                case CB_HOLIDAY:
+                case CB_HOLIDAY: // ホリデーモードのチェックボックスが操作された
                     Log.i(TAG, "CB_HOLIDAY");
                     cd = intent.getBooleanExtra(BOOLEAN, false);
                     boolean oldCd = g.timer[Globals.dateChange].available;
@@ -262,19 +301,20 @@ public class BackEndService extends Service {
 
                     if (!oldCd && cd) {
                         g.timeHolidayModeOn = nt;
+                        isChanged = true;
                     }
-                    resettingTimer();
+                    isChanged |= resettingTimer();
                     sendIntent.putExtra(COMMAND, REDRAW_CBH);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     sendBroadCast(sendIntent);
                     break;
-                case REDRAW:
+                case REDRAW: // 全体のリドロー要求
                     Log.i(TAG, "REDRAW");
                     sendIntent.putExtra(COMMAND, REDRAW);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     sendBroadCast(sendIntent);
                     break;
-                case ALARM_RECEIVE:
+                case ALARM_RECEIVE: // 通常のタイマーが起動した
                     Log.i(TAG, "ALARM_RECEIVE");
                     requestCode = intent.getIntExtra(REQUEST_CODE, 1);
                     if (requestCode != Globals.dateChange) {
@@ -292,18 +332,26 @@ public class BackEndService extends Service {
                         g.timer[Globals.dateChange].available = false;
                         g.cancelTimer(this, Globals.dateChange);
                     }
+                    isChanged = true;
                     Log.i(TAG, "alarm redraw broadcast");
                     sendIntent.putExtra(COMMAND, REDRAW);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     sendBroadCast(sendIntent);
                     break;
-                case SCREEN_ON:
-                    lateTimerActivate();
-                    Toast.makeText(getBaseContext(), "SCREEN_ON running", Toast.LENGTH_LONG).show();
+                case SCREEN_ON: // インターバルタイマーが起動したとき、および SCREEN_ON になったとき
+                    isChanged = lateTimerActivate();
+                    if (isChanged) {
+                        sendIntent.putExtra(COMMAND, REDRAW);
+                        sendIntent.setAction(BackEndService.REDRAW_ACTION);
+                        sendBroadCast(sendIntent);
+                    }
+                    Toast.makeText(getBaseContext(), "CameraDisabler:check timers", Toast.LENGTH_LONG).show();
                     break;
             }
         }
-        g.rewriteSettingFile(this);
+        if (isChanged) {
+            g.rewriteSettingFile(this);
+        }
         if (screenOnReceiver == null) { // SCREEN_ONを捕まえるレシーバを登録
             //この登録は、サービスを stopSelf させても生きている模様
             Log.i(TAG, "ScreenOnReceiver:Register:sid=" + sid);
@@ -313,14 +361,10 @@ public class BackEndService extends Service {
                 public void onReceive(Context context, Intent intent) {
                     // 受信したら、SCREEN_ON をCOMMANDにして、サービスを起動するだけにする。
                     Log.i(TAG, "screenOnReceiver:received");
-                    Toast.makeText(getBaseContext(), "Received", Toast.LENGTH_LONG).show();
+                    //Toast.makeText(getBaseContext(), "Received", Toast.LENGTH_LONG).show();
                     Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                     serviceIntent.putExtra(COMMAND, SCREEN_ON);
                     startService(serviceIntent);
-                }
-
-                public void onDestroy() {
-
                 }
             };
             getBaseContext().getApplicationContext().registerReceiver(screenOnReceiver, intentFilter);

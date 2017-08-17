@@ -25,6 +25,7 @@ import static java.util.Calendar.YEAR;
 
 /**
  * Created by kido on 2017/07/10.
+ * このアプリの状態変数のクラス　サービスとアクティビティで変数を１つずつ作る
  */
 
 public class Globals {
@@ -56,7 +57,6 @@ public class Globals {
     public static final int dateChange = 0;
     public static final int numOfIntervalTimer = 100;
     protected jejTimer timer[];
-    protected boolean isInitialValue = true;
 
     protected void setTimer(Context context, Boolean cameraDisable, int requestCode, Calendar calendar) {
         Intent intent = new Intent(context.getApplicationContext(), AlarmBroadcastReceiver.class);
@@ -70,13 +70,18 @@ public class Globals {
         alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
     }
 
-    protected void cancelTimer(Context context, int requestCode) {
+    protected boolean cancelTimer(Context context, int requestCode) {
         Intent intent = new Intent(context.getApplicationContext(), AlarmBroadcastReceiver.class);
         PendingIntent sender = PendingIntent.getBroadcast(context.getApplicationContext(), requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        boolean isChanged = false;
 
+        if (this.timer[requestCode].isSet) {
+            isChanged = true;
+        }
         this.timer[requestCode].isSet = false;
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(context.ALARM_SERVICE);
         alarmManager.cancel(sender);
+        return isChanged;
     }
 
     protected Calendar makeTargetTime(int requestCode) {
@@ -117,19 +122,25 @@ public class Globals {
         return targetTime;
     }
 
-    protected void setNormalTimer(Context context, int requestCode) {
+    protected boolean setNormalTimer(Context context, int requestCode) {
         Calendar targetTime = makeTargetTime(requestCode);
+        boolean isChanged = false;
 
         if (timer[requestCode].available == false && timer[requestCode].isSet == true ) {
             cancelTimer(context, requestCode);
+            isChanged = true;
         } else if (timer[requestCode].available == true) {
             if (timer[requestCode].isSet == true) { // 設定されている
                 cancelTimer(context, requestCode);
             }
             setTimer(context, timer[requestCode].cameraDisable, requestCode, targetTime);
             timer[requestCode].isSet = true;
+            if (!targetTime.equals(timer[requestCode].afterStart)) {
+                timer[requestCode].afterStart = targetTime;
+                isChanged = true;
+            }
         }
-        timer[requestCode].afterStart = targetTime;
+        return isChanged;
     }
 
     protected Calendar parseDateString(String str) {
@@ -166,6 +177,17 @@ public class Globals {
         return initCal;
     }
 
+    public boolean compareCalendar(Calendar a, Calendar b) {
+        String sa = dateToString(a);
+        String sb = dateToString(b);
+
+        if (sa.equals(sb)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     protected Boolean readSettingFile(Context context) {
         BufferedReader reader = null;
         Boolean doRewriteFile = false;
@@ -177,7 +199,13 @@ public class Globals {
 
             if((line = reader.readLine()) != null) {
                 try {
-                    timeBeforeDisable = parseDateString(line);
+                    Calendar rd = parseDateString(line);
+                    if (!compareCalendar(timeBeforeDisable, rd)) {
+                        Log.i(TAG, "timerBeforeDisable is changed:"+Globals.dateToString(timeBeforeDisable)+":"+Globals.dateToString(rd));
+                        timeBeforeDisable = rd;
+                        doRewriteFile = true;
+
+                    }
                 } catch(IllegalArgumentException e) {
                     timeBeforeDisable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                     doRewriteFile = true;
@@ -188,7 +216,12 @@ public class Globals {
             }
             if((line = reader.readLine()) != null) {
                 try {
-                    timeBeforeEnable = parseDateString(line);
+                    Calendar rd = parseDateString(line);
+                    if (!compareCalendar(timeBeforeEnable, rd)) {
+                        timeBeforeEnable = rd;
+                        doRewriteFile = true;
+                        Log.i(TAG, "timerBeforeEnable is changed");
+                    }
                 } catch (IllegalArgumentException e) {
                     timeBeforeEnable.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                     doRewriteFile = true;
@@ -205,20 +238,40 @@ public class Globals {
                     Matcher m = ptn.matcher(line);
                     if (m.find()) {
                         if (m.group(1).equals("true")) {
-                            timer[i].available = true;
+                            if (!timer[i].available) {
+                                timer[i].available = true;
+                                doRewriteFile = true;
+                                Log.i(TAG, "available of No" + i + " timer is changed");
+                            }
                         } else {
-                            timer[i].available = false;
+                            if (timer[i].available) {
+                                timer[i].available = false;
+                                doRewriteFile = true;
+                                Log.i(TAG, "available of No" + i + " timer is changed");
+                            }
                         }
                         if (m.group(2).equals("disable")) {
-                            timer[i].cameraDisable = true;
+                            if (!timer[i].cameraDisable) {
+                                timer[i].cameraDisable = true;
+                                doRewriteFile = true;
+                                Log.i(TAG, "cameraDisable of No" + i + " timer is changed");
+                            }
                         } else {
-                            timer[i].cameraDisable = false;
+                            if (timer[i].cameraDisable) {
+                                timer[i].cameraDisable = false;
+                                doRewriteFile = true;
+                                Log.i(TAG, "cameraDisable of No" + i + " timer is changed");
+                            }
                         }
                         int h = Integer.parseInt(m.group(3));
                         int min = Integer.parseInt(m.group(4));
                         if (h >= 0 && h <= 23 && min >= 0 && min <= 59) {
-                            timer[i].hourOfDay = h;
-                            timer[i].min = min;
+                            if (timer[i].hourOfDay != h || timer[i].min != min) {
+                                timer[i].hourOfDay = h;
+                                timer[i].min = min;
+                                doRewriteFile = true;
+                                Log.i(TAG, "hourOfDay or min of No"+i+" timer is changed");
+                            }
                             timer[i].int2str();
                         } else {
                             timer[i].timeInDay = INITIAL_TIME;
@@ -241,7 +294,12 @@ public class Globals {
                 }
                 if ((line = reader.readLine()) != null) {
                     try {
-                        timer[i].beforeStart = parseDateString(line);
+                        Calendar tmp = parseDateString(line);
+                        if (!compareCalendar(tmp, timer[i].beforeStart)) {
+                            timer[i].beforeStart = tmp;
+                            doRewriteFile = true;
+                            Log.i(TAG, "beforeStart of No"+i+" timer is changed");
+                        }
                     } catch (IllegalArgumentException e) {
                         timer[i].beforeStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                         doRewriteFile = true;
@@ -259,17 +317,32 @@ public class Globals {
                         Matcher m = ptn.matcher(line);
                         if (m.find()) {
                             line = m.group(1);
-                            timer[i].isSet = true;
+                            if (!timer[i].isSet) {
+                                timer[i].isSet = true;
+                                doRewriteFile = true;
+                                Log.i(TAG, "isSet of No"+i+" timer is changed");
+                            }
                         } else {
-                            timer[i].isSet = false;
+                            if (timer[i].isSet) {
+                                timer[i].isSet = false;
+                                doRewriteFile = true;
+                                Log.i(TAG, "isSet of No"+i+" timer is changed");
+                            }
                         }
-                        timer[i].afterStart = parseDateString(line);
+                        Calendar tmp = parseDateString(line);
+                        if (!compareCalendar(tmp, timer[i].afterStart)) {
+                            timer[i].afterStart = tmp;
+                            doRewriteFile = true;
+                            Log.i(TAG, "afterStart of No"+i+" timer is changed");
+                        }
                     } catch (IllegalArgumentException e) {
                         timer[i].afterStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+                        timer[i].isSet = false;
                         doRewriteFile = true;
                     }
                 } else {
                     timer[i].afterStart.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
+                    timer[i].isSet = false;
                     doRewriteFile = true;
                 }
 
@@ -277,7 +350,12 @@ public class Globals {
 
             if ((line = reader.readLine()) != null) {
                 try {
-                    timeHolidayModeOn = parseDateString(line);
+                    Calendar tmp = parseDateString(line);
+                    if (!compareCalendar(tmp, timeHolidayModeOn)) {
+                        timeHolidayModeOn = tmp;
+                        doRewriteFile = true;
+                        Log.i(TAG, "timerHolidayModeOn is changed");
+                    }
                 } catch (IllegalArgumentException e) {
                     timeHolidayModeOn.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
                     doRewriteFile = true;
@@ -309,12 +387,7 @@ public class Globals {
             }
         }
         Log.i(TAG, "readSettingFile out");
-        isInitialValue = false;
         return doRewriteFile;
-    }
-
-    public boolean isInitial() {
-        return isInitialValue;
     }
 
     protected void rewriteSettingFile(Context context) {
@@ -399,7 +472,6 @@ public class Globals {
         timeHolidayModeOn.set(INIT_YEAR, INIT_MONTH, INIT_DAY, INIT_HOUR, INIT_MIN, INIT_SEC);
         timer = new jejTimer[timerEndIndex+1];
 
-        isInitialValue = true;
         for (int i = 0 ; i <= timerEndIndex ; i++) {
             timer[i] = new jejTimer();
             timer[i].available = false;

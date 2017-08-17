@@ -1,5 +1,7 @@
 package com.gmail.jl2jej.wor;
 
+import android.util.Log;
+
 import java.util.Calendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,8 +20,9 @@ public class jejTimer {
     protected Calendar beforeStart;
     protected Calendar afterStart;
     protected Boolean isSet;
+    private static final String TAG = "jejTimer";
 
-    protected void str2int() {
+    protected void str2int() { //書き換えたかどうかを返す
         String regex = "(\\d\\d):(\\d\\d)$";
         Pattern ptn = Pattern.compile(regex);
 
@@ -34,7 +37,7 @@ public class jejTimer {
         }
     }
 
-    protected void int2str() {
+    protected void int2str() { // 書き換えたかどうかを返す
         this.timeInDay = String.format("%02d:%02d", this.hourOfDay, this.min);
     }
 }
