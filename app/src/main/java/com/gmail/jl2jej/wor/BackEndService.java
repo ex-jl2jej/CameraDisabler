@@ -350,12 +350,16 @@ public class BackEndService extends Service {
                     }
                     break;
             }
+        } else {
+            Log.i(TAG, "************* intent == null ***************");
         }
         if (isChanged) {
             g.rewriteSettingFile(this);
         }
         if (screenOnReceiver == null) { // SCREEN_ONを捕まえるレシーバを登録
-            //この登録は、サービスを stopSelf させても生きている模様
+            //この登録は、サービスを stopSelf させても生きているが、
+            // 明にアクティビティを削除する等すると、働かなくなる
+            // そこで、インターバルタイマーを使って、サービスを生かす作戦に出ることにする
             Log.i(TAG, "ScreenOnReceiver:Register:sid=" + sid);
             IntentFilter intentFilter = new IntentFilter(Intent.ACTION_SCREEN_ON);
             screenOnReceiver = new BroadcastReceiver() {
