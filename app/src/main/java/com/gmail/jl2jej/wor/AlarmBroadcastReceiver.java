@@ -24,38 +24,42 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        devicePolicyManager = (DevicePolicyManager)context.getSystemService(MainActivity.DEVICE_POLICY_SERVICE);
-        tCameraReceiver = new ComponentName(context, CameraReceiver.class);
-        Boolean cameraDisable = intent.getBooleanExtra(BackEndService.CAMERA_DISABLE, true);
-        int requestCode = intent.getIntExtra(BackEndService.REQUEST_CODE, 1);
-        Boolean oldCameraDisable = devicePolicyManager.getCameraDisabled(tCameraReceiver);
-
-         Log.i(TAG, "onReceive");
-        if (requestCode != Globals.dateChange && requestCode != Globals.numOfIntervalTimer) {
-            devicePolicyManager.setCameraDisabled(tCameraReceiver, cameraDisable);
-        }
-
-        Intent serviceIntent = new Intent(context, BackEndService.class);
-
-        if (requestCode == Globals.numOfIntervalTimer) {
-            Log.i(TAG, "SCREEN_ON");
-            serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
+        Log.i(TAG, "onReceive in");
+        if (intent == null) {
+            Log.i(TAG, "*********** intent == null ************");
         } else {
-            Log.i(TAG, "Alarm");
-            serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.ALARM_RECEIVE);
-            serviceIntent.putExtra("CALLED", "AlarmBroadCast");
-            serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, cameraDisable);
-            serviceIntent.putExtra(BackEndService.REQUEST_CODE, requestCode);
-            serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(Calendar.getInstance()));
-            if (oldCameraDisable != cameraDisable) {
-                serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, true);
-                Log.i(TAG, "REWRITE REQUEST true");
-            } else {
-                serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, false);
-                Log.i(TAG, "REWRITE REQUEST false");
-            }
-        }
+            devicePolicyManager = (DevicePolicyManager) context.getSystemService(MainActivity.DEVICE_POLICY_SERVICE);
+            tCameraReceiver = new ComponentName(context, CameraReceiver.class);
+            Boolean cameraDisable = intent.getBooleanExtra(BackEndService.CAMERA_DISABLE, true);
+            int requestCode = intent.getIntExtra(BackEndService.REQUEST_CODE, 1);
+            Boolean oldCameraDisable = devicePolicyManager.getCameraDisabled(tCameraReceiver);
 
-         context.startService(serviceIntent);
+            if (requestCode != Globals.dateChange && requestCode != Globals.numOfIntervalTimer) {
+                devicePolicyManager.setCameraDisabled(tCameraReceiver, cameraDisable);
+            }
+
+            Intent serviceIntent = new Intent(context, BackEndService.class);
+
+            if (requestCode == Globals.numOfIntervalTimer) {
+                Log.i(TAG, "SCREEN_ON");
+                serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
+            } else {
+                Log.i(TAG, "Alarm");
+                serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.ALARM_RECEIVE);
+                serviceIntent.putExtra("CALLED", "AlarmBroadCast");
+                serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, cameraDisable);
+                serviceIntent.putExtra(BackEndService.REQUEST_CODE, requestCode);
+                serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(Calendar.getInstance()));
+                if (oldCameraDisable != cameraDisable) {
+                    serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, true);
+                    Log.i(TAG, "REWRITE REQUEST true");
+                } else {
+                    serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, false);
+                    Log.i(TAG, "REWRITE REQUEST false");
+                }
+            }
+            context.startService(serviceIntent);
+        }
+        Log.i(TAG, "onReceive out");
     }
 }

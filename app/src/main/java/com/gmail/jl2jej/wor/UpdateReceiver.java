@@ -20,15 +20,21 @@ public class UpdateReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        //　ここで　もらった bundle をそのまま渡すようにする
-        Bundle bundle = intent.getExtras();
         Log.i(TAG, "onReceive in");
-        if (handler != null) {
-            Message msg = new Message();
+        if (intent == null) {
+            Log.i(TAG, "********** intent == null ************");
+        } else {
+            //　ここで　もらった bundle をそのまま渡すようにする
+            Bundle bundle = intent.getExtras();
+            if (handler != null) {
+                Message msg = new Message();
 
-            msg.setData(bundle);
-            Log.i(TAG, "sendMessage");
-            handler.sendMessage(msg);
+                msg.setData(bundle);
+                Log.i(TAG, "sendMessage");
+                handler.sendMessage(msg);
+            } else {
+                Log.i(TAG, "handler == null");
+            }
         }
         Log.i(TAG, "onReceive out");
     }

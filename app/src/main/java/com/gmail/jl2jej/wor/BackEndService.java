@@ -361,12 +361,16 @@ public class BackEndService extends Service {
             screenOnReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    // 受信したら、SCREEN_ON をCOMMANDにして、サービスを起動するだけにする。
                     Log.i(TAG, "screenOnReceiver:received");
-                    //Toast.makeText(getBaseContext(), "Received", Toast.LENGTH_LONG).show();
-                    Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
-                    serviceIntent.putExtra(COMMAND, SCREEN_ON);
-                    startService(serviceIntent);
+                    if (intent == null) {
+                        Log.i(TAG, "******** intent == null **********");
+                    } else {
+                        // 受信したら、SCREEN_ON をCOMMANDにして、サービスを起動するだけにする。
+                        Log.i(TAG, "startService comannd is SCREEN_ON");
+                        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+                        serviceIntent.putExtra(COMMAND, SCREEN_ON);
+                        startService(serviceIntent);
+                    }
                 }
             };
             getBaseContext().getApplicationContext().registerReceiver(screenOnReceiver, intentFilter);
