@@ -96,9 +96,11 @@ public class BackEndService extends Service {
         Calendar nowTime = Calendar.getInstance();
         int[] order = new int[Globals.timerEndIndex+1]; // タイマーを時刻の順序に実行するための配列
         boolean isChanged = false;
+        boolean oldCameraDisabled;
 
         devicePolicyManager = (DevicePolicyManager)getBaseContext().getSystemService(MainActivity.DEVICE_POLICY_SERVICE);
         tCameraReceiver = new ComponentName(getBaseContext(), CameraReceiver.class);
+        oldCameraDisabled = devicePolicyManager.getCameraDisabled(tCameraReceiver);
 
         for (int i = 0 ; i <= Globals.timerEndIndex ; i++) { // まずは、番号通りとしておく
             order[i] = i;
@@ -124,10 +126,12 @@ public class BackEndService extends Service {
                 } else {
                     Log.i(TAG, "late check: change camera disable:" + g.timer[i].cameraDisable);
                     devicePolicyManager.setCameraDisabled(tCameraReceiver, g.timer[i].cameraDisable);
-                    if (g.timer[i].cameraDisable) {
-                        g.timeBeforeDisable = nowTime;
-                    } else {
-                        g.timeBeforeEnable = nowTime;
+                    if (g.timer[i].cameraDisable != oldCameraDisabled) {
+                        if (g.timer[i].cameraDisable) {
+                            g.timeBeforeDisable = nowTime;
+                        } else {
+                            g.timeBeforeEnable = nowTime;
+                        }
                     }
                     g.timer[i].beforeStart = nowTime;
                     g.setNormalTimer(getBaseContext(), i);
@@ -199,9 +203,9 @@ public class BackEndService extends Service {
                     break;
                 case TIME_BEFORE_DISABLE: // カメラ有効無効スイッチが　カメラ無効に操作された
                     tmp =  g.parseDateString(intent.getStringExtra(NOW_TIME));
-                    if (!tmp.equals(g.timeBeforeDisable)) {
+                    if (!g.compareCalendar(tmp, g.timeBeforeDisable)) {
                         g.timeBeforeDisable = tmp;
-                         isChanged = true;
+                        isChanged = true;
                     }
                     sendIntent.putExtra(COMMAND, REDRAW_TBD);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
@@ -210,7 +214,7 @@ public class BackEndService extends Service {
                     break;
                 case TIME_BEFORE_ENABLE: // カメラ有効無効スイッチが　カメラ有効に操作された
                     tmp = g.parseDateString(intent.getStringExtra(NOW_TIME));
-                    if (!tmp.equals(g.timeBeforeEnable)) {
+                    if (!g.compareCalendar(tmp, g.timeBeforeEnable)) {
                         g.timeBeforeEnable = tmp;
                         isChanged = true;
                     }
@@ -281,7 +285,7 @@ public class BackEndService extends Service {
                     Log.i(TAG, "DATE_PICK");
                     requestCode = intent.getIntExtra(REQUEST_CODE, Globals.dateChange);
                     tmp = g.parseDateString(intent.getStringExtra(TARGET_DATE));
-                    if (!tmp.equals(g.timer[Globals.dateChange].afterStart)) {
+                    if (!g.compareCalendar(tmp, g.timer[Globals.dateChange].afterStart)) {
                         g.timer[Globals.dateChange].afterStart = tmp;
                         isChanged = true;
                     }

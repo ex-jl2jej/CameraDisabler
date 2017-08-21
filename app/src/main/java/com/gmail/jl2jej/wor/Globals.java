@@ -135,7 +135,7 @@ public class Globals {
             }
             setTimer(context, timer[requestCode].cameraDisable, requestCode, targetTime);
             timer[requestCode].isSet = true;
-            if (!targetTime.equals(timer[requestCode].afterStart)) {
+            if (!compareCalendar(targetTime, timer[requestCode].afterStart)) {
                 timer[requestCode].afterStart = targetTime;
                 isChanged = true;
             }
