@@ -83,18 +83,19 @@ public class BackEndService extends Service {
         return null;
     }
 
-    private boolean resettingTimer() {
-        boolean isChanged = false;
+//    private boolean resettingTimer() {
+//        boolean isChanged = false;
+//
+//        for (int i = 0 ; i <= Globals.timerEndIndex ; i++) {
+//            if (g.timer[i].available) {
+//                isChanged = g.setNormalTimer(this, i);
+//            } else {
+//                isChanged = g.cancelTimer(this, i);
+//            }
+//        }
+//        return isChanged;
+//    }
 
-        for (int i = 0 ; i <= Globals.timerEndIndex ; i++) {
-            if (g.timer[i].available) {
-                isChanged = g.setNormalTimer(this, i);
-            } else {
-                isChanged = g.cancelTimer(this, i);
-            }
-        }
-        return isChanged;
-    }
     private void setNotificationTitle(Notification.Builder builder, boolean cameraDisabled, Calendar nowTime) {
         builder.setContentTitle("CameraDisabler:" + (cameraDisabled ? "Disable" : "Enable")
                 + String.format(":%02d/%02d %02d:%02d", nowTime.get(Calendar.MONTH) + 1, nowTime.get(Calendar.DAY_OF_MONTH), nowTime.get(Calendar.HOUR_OF_DAY), nowTime.get(Calendar.MINUTE)));
@@ -172,6 +173,11 @@ public class BackEndService extends Service {
                 }
                 isChanged = true;
             } else {
+                if (g.timer[i].available) {
+                    isChanged = g.setNormalTimer(this, i);
+                } else {
+                    isChanged = g.cancelTimer(this, i);
+                }
                 Log.i(TAG, "timer is not late:" + i);
             }
         }
@@ -231,12 +237,11 @@ public class BackEndService extends Service {
             switch (intent.getIntExtra(COMMAND, REDRAW)) {
                 case STARTUP: // アプリ再起動時
                     Log.i(TAG, "StartUp out:startID:" + Integer.toString(startId));
-                    isChanged = resettingTimer();
+                    isChanged = lateTimerActivate();
                     break;
                 case START_ACTIVITY: // アクティビティが起動されて最初のサービス呼び出し
                     Log.i(TAG, "START_ACTIVITY:startID:" + Integer.toString(startId));
                     isChanged = g.readSettingFile(this);
-                    isChanged |= resettingTimer();
                     isChanged |= lateTimerActivate();
                     intervalTimerSet();
                     break;
@@ -329,7 +334,7 @@ public class BackEndService extends Service {
                         isChanged = true;
                     }
                     if (g.timer[Globals.dateChange].available) {
-                        isChanged |= resettingTimer();
+                        isChanged |= lateTimerActivate();
                     }
                     sendIntent.putExtra(COMMAND, REDRAW_DP);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
@@ -346,7 +351,7 @@ public class BackEndService extends Service {
                         g.timeHolidayModeOn = nt;
                         isChanged = true;
                     }
-                    isChanged |= resettingTimer();
+                    isChanged |= lateTimerActivate();
                     sendIntent.putExtra(COMMAND, REDRAW_CBH);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     sendBroadCast(sendIntent);
