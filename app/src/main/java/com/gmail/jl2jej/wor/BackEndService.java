@@ -1,6 +1,8 @@
 package com.gmail.jl2jej.wor;
 
 import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.app.admin.DevicePolicyManager;
@@ -9,8 +11,10 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -27,6 +31,7 @@ public class BackEndService extends Service {
     private final String TAG = "BackEndService";
     public static final String COMMAND = "com.gmail.jl2jej.wor.COMMAND";
     public static final String NOW_TIME = "com.gmail.jl2jej.wor.NOW_TIME";
+    public static final String NOW_STATE = "com.gmail.jl2jej.wor.NOW_STATE";
     public static final String BOOLEAN = "com.gmail.jl2jej.wor.BOOLEAN";
     public static final String REQUEST_CODE = "com.gmail.jl2jej.wor.REQUEST_CODE";
     public static final String HOUR_OF_DAY = "com.gmail.jl2jej.wor.HOUR_OF_DAY";
@@ -53,6 +58,7 @@ public class BackEndService extends Service {
     public static final int DATE_PICK = 16;
     public static final int REDRAW_DP = 17;
     public static final int SCREEN_ON = 18;
+    public static final String MAGIC_TIME = "07:01";
 
     private static Globals g = null;
 
@@ -89,6 +95,30 @@ public class BackEndService extends Service {
         }
         return isChanged;
     }
+    private void setNotificationTitle(Notification.Builder builder, boolean cameraDisabled, Calendar nowTime) {
+        builder.setContentTitle("CameraDisabler:" + (cameraDisabled ? "Disable" : "Enable")
+                + String.format(":%02d/%02d %02d:%02d", nowTime.get(Calendar.MONTH) + 1, nowTime.get(Calendar.DAY_OF_MONTH), nowTime.get(Calendar.HOUR_OF_DAY), nowTime.get(Calendar.MINUTE)));
+    }
+
+    private void notificationPrint(int requestCode, String message, boolean cameraDisabled) {
+        Intent notificationIntent = new Intent(getBaseContext(), MainActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(getBaseContext(), 0, notificationIntent, 0);
+        Notification.Builder builder = new Notification.Builder(getBaseContext());
+        NotificationManager manager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        builder.setSmallIcon(R.drawable.ic_stat_name);
+        Calendar nowTime = Calendar.getInstance();
+
+        setNotificationTitle(builder, cameraDisabled, nowTime);
+        builder.setContentText(message);
+        builder.setDefaults(Notification.PRIORITY_DEFAULT);
+        builder.setContentIntent(contentIntent);
+        if (Build.VERSION.SDK_INT >= 16) {
+            manager.notify(requestCode, builder.build());
+        } else {
+            manager.notify(requestCode, builder.getNotification());
+        }
+
+    }
 
     private boolean lateTimerActivate() { // 遅延しているタイマーがあれば是正 是正したかどうかを返す
         DevicePolicyManager devicePolicyManager = null;
@@ -116,6 +146,8 @@ public class BackEndService extends Service {
             }
         }
 
+        String txt = new String("");
+
         for (int j = 0 ; j <= Globals.timerEndIndex; j++) {
             int i = order[j];
             if (g.timer[i].available && nowTime.after(g.timer[i].afterStart)) { // タイマーが有効　かつ　遅延
@@ -123,6 +155,7 @@ public class BackEndService extends Service {
                     Log.i(TAG, "late check: holiday mode cancel");
                     g.cancelTimer(getBaseContext(), i);
                     g.timer[i].available = false;
+                    txt = txt + "タイマー遅延:ホリデーモード解除:" + Globals.dateToString(nowTime);
                 } else {
                     Log.i(TAG, "late check: change camera disable:" + g.timer[i].cameraDisable);
                     devicePolicyManager.setCameraDisabled(tCameraReceiver, g.timer[i].cameraDisable);
@@ -135,12 +168,18 @@ public class BackEndService extends Service {
                     }
                     g.timer[i].beforeStart = nowTime;
                     g.setNormalTimer(getBaseContext(), i);
+                    txt = txt + "タイマー遅延:No." + i + ":" + Globals.dateToString(nowTime);
                 }
                 isChanged = true;
             } else {
                 Log.i(TAG, "timer is not late:" + i);
             }
         }
+        oldCameraDisabled = devicePolicyManager.getCameraDisabled(tCameraReceiver);
+        if (g.timer[1].timeInDay.equals(MAGIC_TIME)) {
+            notificationPrint(2, txt, oldCameraDisabled);
+        }
+
         return isChanged;
     }
 
@@ -320,23 +359,34 @@ public class BackEndService extends Service {
                     break;
                 case ALARM_RECEIVE: // 通常のタイマーが起動した
                     Log.i(TAG, "ALARM_RECEIVE");
+                    String txt = new String("");
+
                     requestCode = intent.getIntExtra(REQUEST_CODE, 1);
                     if (requestCode != Globals.dateChange) {
+                        txt = txt + "Alarm No." + requestCode + "が";
                         Boolean cameraDisable = intent.getBooleanExtra(CAMERA_DISABLE, true);
                         g.timer[requestCode].beforeStart = g.parseDateString(intent.getStringExtra(NOW_TIME));
+                        txt = txt + Globals.dateToString(g.timer[requestCode].beforeStart) + "に起動";
                         g.setNormalTimer(this, requestCode);
                         if (intent.getBooleanExtra(REWRITE_REQUEST, false)) {
                             if (cameraDisable) {
+                                txt = txt + ":無効化";
                                 g.timeBeforeDisable = g.parseDateString(intent.getStringExtra(NOW_TIME));
                             } else {
+                                txt = txt + ":有効化";
                                 g.timeBeforeEnable = g.parseDateString(intent.getStringExtra(NOW_TIME));
                             }
                         }
                     } else {
+                        txt = txt + "ホリデーモードが解除";
                         g.timer[Globals.dateChange].available = false;
                         g.cancelTimer(this, Globals.dateChange);
                     }
                     isChanged = true;
+                    if (g.timer[1].timeInDay.equals(MAGIC_TIME)) {
+                        notificationPrint(1, txt, intent.getBooleanExtra(NOW_STATE, true));
+                    }
+
                     Log.i(TAG, "alarm redraw broadcast");
                     sendIntent.putExtra(COMMAND, REDRAW);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
@@ -349,7 +399,7 @@ public class BackEndService extends Service {
                         sendIntent.setAction(BackEndService.REDRAW_ACTION);
                         sendBroadCast(sendIntent);
                     }
-                    if (g.timer[1].timeInDay.equals("07:01")) {
+                    if (g.timer[1].timeInDay.equals(MAGIC_TIME)) {
                         Toast.makeText(getBaseContext(), "CameraDisabler:check timers", Toast.LENGTH_LONG).show();
                     }
                     break;

@@ -40,6 +40,7 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
 
             Intent serviceIntent = new Intent(context, BackEndService.class);
 
+
             if (requestCode == Globals.numOfIntervalTimer) {
                 Log.i(TAG, "SCREEN_ON");
                 serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
@@ -50,6 +51,7 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
                 serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, cameraDisable);
                 serviceIntent.putExtra(BackEndService.REQUEST_CODE, requestCode);
                 serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(Calendar.getInstance()));
+                serviceIntent.putExtra(BackEndService.NOW_STATE, cameraDisable);
                 if (oldCameraDisable != cameraDisable) {
                     serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, true);
                     Log.i(TAG, "REWRITE REQUEST true");
