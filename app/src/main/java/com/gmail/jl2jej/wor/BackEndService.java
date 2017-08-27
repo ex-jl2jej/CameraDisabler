@@ -399,6 +399,7 @@ public class BackEndService extends Service {
                     break;
                 case SCREEN_ON: // インターバルタイマーが起動したとき、および SCREEN_ON になったとき
                     isChanged = lateTimerActivate();
+                    intervalTimerSet();
                     if (isChanged) {
                         sendIntent.putExtra(COMMAND, REDRAW);
                         sendIntent.setAction(BackEndService.REDRAW_ACTION);
