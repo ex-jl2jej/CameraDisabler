@@ -86,20 +86,7 @@ public class BackEndService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-
-//    private boolean resettingTimer() {
-//        boolean isChanged = false;
-//
-//        for (int i = 0 ; i <= Globals.timerEndIndex ; i++) {
-//            if (g.timer[i].available) {
-//                isChanged = g.setNormalTimer(this, i);
-//            } else {
-//                isChanged = g.cancelTimer(this, i);
-//            }
-//        }
-//        return isChanged;
-//    }
-
+    
     private void setNotificationTitle(Notification.Builder builder, boolean cameraDisabled, Calendar nowTime) {
         builder.setContentTitle("CameraDisabler:" + (cameraDisabled ? "Disable" : "Enable")
                 + String.format(":%02d/%02d %02d:%02d", nowTime.get(Calendar.MONTH) + 1, nowTime.get(Calendar.DAY_OF_MONTH), nowTime.get(Calendar.HOUR_OF_DAY), nowTime.get(Calendar.MINUTE)));
