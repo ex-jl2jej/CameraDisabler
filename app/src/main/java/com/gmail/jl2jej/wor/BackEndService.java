@@ -61,6 +61,10 @@ public class BackEndService extends Service {
     public static final String MAGIC_TIME = "07:01";
 
     private static Globals g = null;
+    private static int numOfPowerSwitchScreenOn = 0;
+    public static int numOfOnDestroy = 0;
+    public static int numOfIntervalTimerOn = 0;
+    private static int numOfToasts = 0;
 
     private Handler handler;
     private static BroadcastReceiver screenOnReceiver = null;
@@ -174,9 +178,9 @@ public class BackEndService extends Service {
                 isChanged = true;
             } else {
                 if (g.timer[i].available) {
-                    isChanged = g.setNormalTimer(this, i);
+                    isChanged = g.setNormalTimer(getBaseContext(), i);
                 } else {
-                    isChanged = g.cancelTimer(this, i);
+                    isChanged = g.cancelTimer(getBaseContext(), i);
                 }
                 Log.i(TAG, "timer is not late:" + i);
             }
@@ -341,20 +345,23 @@ public class BackEndService extends Service {
                     sendBroadCast(sendIntent);
                     break;
                 case CB_HOLIDAY: // ホリデーモードのチェックボックスが操作された
-                    Log.i(TAG, "CB_HOLIDAY");
                     cd = intent.getBooleanExtra(BOOLEAN, false);
-                    boolean oldCd = g.timer[Globals.dateChange].available;
                     g.timer[Globals.dateChange].available = cd;
                     Calendar nt = g.parseDateString(intent.getStringExtra(NOW_TIME));
 
-                    if (!oldCd && cd) {
+                    if (cd) {
                         g.timeHolidayModeOn = nt;
                         isChanged = true;
+                        if (g.timeHolidayModeOn.after(g.timer[Globals.dateChange].afterStart)) {
+                            g.timer[Globals.dateChange].afterStart.set(nt.get(Calendar.YEAR), nt.get(Calendar.MONTH), nt.get(Calendar.DAY_OF_MONTH)+1, 0, 0, 0);
+                        }
+                        Log.i(TAG, "set timeHolidayModeOn");
                     }
                     isChanged |= lateTimerActivate();
                     sendIntent.putExtra(COMMAND, REDRAW_CBH);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     sendBroadCast(sendIntent);
+                    Log.i(TAG, "CB_HOLIDAY:"+Globals.dateToString(g.timeHolidayModeOn ));
                     break;
                 case REDRAW: // 全体のリドロー要求
                     Log.i(TAG, "REDRAW");
@@ -398,16 +405,31 @@ public class BackEndService extends Service {
                     sendBroadCast(sendIntent);
                     break;
                 case SCREEN_ON: // インターバルタイマーが起動したとき、および SCREEN_ON になったとき
+                    Log.i(TAG, "case SCREEN_ON");
                     isChanged = lateTimerActivate();
-                    intervalTimerSet();
                     if (isChanged) {
                         sendIntent.putExtra(COMMAND, REDRAW);
                         sendIntent.setAction(BackEndService.REDRAW_ACTION);
                         sendBroadCast(sendIntent);
                     }
-                    if (g.timer[1].timeInDay.equals(MAGIC_TIME)) {
-                        Toast.makeText(getBaseContext(), "CameraDisabler:check timers", Toast.LENGTH_LONG).show();
+                    numOfToasts++;
+                    switch (intent.getIntExtra(REQUEST_CODE,1)) {
+                        case Globals.numOfIntervalTimer:
+                            numOfIntervalTimerOn++;
+                            break;
+                        case Globals.screenOnCode:
+                            numOfPowerSwitchScreenOn++;
+                            break;
+                        case Globals.ON_DESTROY:
+                            numOfOnDestroy++;
+                            break;
                     }
+                    if (g.timer[1].timeInDay.equals(MAGIC_TIME)) {
+                        Toast.makeText(getBaseContext(), "CameraDisabler:check timers\n合計:"
+                                +numOfToasts+":sw:" +numOfPowerSwitchScreenOn+":int:"+numOfIntervalTimerOn+":des:"+numOfOnDestroy
+                                +"\n" + g.timer[Globals.dateChange].timeInDay, Toast.LENGTH_LONG).show();
+                    }
+                    Log.i(TAG, "break SCREEN_ON");
                     break;
             }
         } else {
@@ -433,6 +455,7 @@ public class BackEndService extends Service {
                         Log.i(TAG, "startService comannd is SCREEN_ON");
                         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
                         serviceIntent.putExtra(COMMAND, SCREEN_ON);
+                        serviceIntent.putExtra(REQUEST_CODE, Globals.screenOnCode);
                         startService(serviceIntent);
                     }
                 }

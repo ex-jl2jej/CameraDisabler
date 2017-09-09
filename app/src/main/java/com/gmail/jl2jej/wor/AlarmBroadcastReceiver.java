@@ -44,6 +44,7 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
             if (requestCode == Globals.numOfIntervalTimer) {
                 Log.i(TAG, "SCREEN_ON");
                 serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
+                serviceIntent.putExtra(BackEndService.REQUEST_CODE, requestCode);
             } else {
                 Log.i(TAG, "Alarm");
                 serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.ALARM_RECEIVE);
@@ -52,7 +53,7 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
                 serviceIntent.putExtra(BackEndService.REQUEST_CODE, requestCode);
                 serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(Calendar.getInstance()));
                 serviceIntent.putExtra(BackEndService.NOW_STATE, cameraDisable);
-                if (oldCameraDisable != cameraDisable) {
+                if (oldCameraDisable != cameraDisable && requestCode != Globals.dateChange) {
                     serviceIntent.putExtra(BackEndService.REWRITE_REQUEST, true);
                     Log.i(TAG, "REWRITE REQUEST true");
                 } else {

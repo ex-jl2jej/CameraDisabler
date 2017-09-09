@@ -70,12 +70,15 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
             Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+            Calendar nowTime = Calendar.getInstance();
             Log.i(TAG, "cbHolidayMode Listener");
             ag.timer[dateChange].available = isChecked;
-            ag.timeHolidayModeOn = Calendar.getInstance();
+            if (isChecked) {
+                ag.timeHolidayModeOn = nowTime;
+            }
             serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_HOLIDAY);
             serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
-            serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(ag.timeHolidayModeOn));
+            serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(nowTime));
             startService(serviceIntent);
         }
     };
@@ -530,7 +533,7 @@ public class MainActivity extends AppCompatActivity {
                 ((TextView)findViewById(R.id.textAfterTimer1)).setText(Globals.dateToString(ag.timer[1].afterStart));
                 ((TextView)findViewById(R.id.textAfterTimer2)).setText(Globals.dateToString(ag.timer[2].afterStart));
                 ((TextView)findViewById(R.id.textAfterTimer3)).setText(Globals.dateToString(ag.timer[3].afterStart));
-                Log.i(TAG, "rewriteView part CBH");
+                Log.i(TAG, "rewriteView part CBH :" + Globals.dateToString(ag.timeHolidayModeOn));
                 break;
             case BackEndService.REDRAW_DP:
                 ((TextView)findViewById(R.id.textAfterTimer0)).setText(Globals.dateToString(ag.timer[Globals.dateChange].afterStart));
@@ -559,6 +562,7 @@ public class MainActivity extends AppCompatActivity {
 
         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
+        serviceIntent.putExtra(BackEndService.REQUEST_CODE, Globals.ON_DESTROY);
         startService(serviceIntent);
     }
 
