@@ -157,12 +157,6 @@ public class MainActivity extends AppCompatActivity {
 
         updateReceiver.registerHandler(updateHandler);
 
-        //初期化のサービスを動かす
-        Intent serviceIntent = new Intent(this, BackEndService.class);
-        serviceIntent.putExtra("CALLED", "MainActivity");
-        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.START_ACTIVITY);
-        startService(serviceIntent);
-
         //カメラを有効無効できるようにする
         devicePolicyManager = (DevicePolicyManager)getSystemService(MainActivity.DEVICE_POLICY_SERVICE);
         tCameraReceiver = new ComponentName(this, CameraReceiver.class);
@@ -401,6 +395,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
         );
+
+        //初期化のサービスを動かす
+        Intent serviceIntent = new Intent(this, BackEndService.class);
+        serviceIntent.putExtra("CALLED", "MainActivity");
+        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.START_ACTIVITY);
+        startService(serviceIntent);
+
         Log.i(TAG, "onCreate out");
     }
 
@@ -549,8 +550,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.i(TAG, "onResume");
-        ag.readSettingFile(getBaseContext());
-        rewriteView();
+        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
+        serviceIntent.putExtra(BackEndService.REQUEST_CODE, Globals.screenOnCode);
+        startService(serviceIntent);
+        //ag.readSettingFile(getBaseContext());
+        //rewriteView();
     }
 
     @Override

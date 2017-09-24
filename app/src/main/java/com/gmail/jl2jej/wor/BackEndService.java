@@ -208,6 +208,7 @@ public class BackEndService extends Service {
         super.onStartCommand(intent, flags, startId);
         Intent sendIntent = new Intent();
         sid = startId;
+        Boolean redrawFlag = false;
 
         if (g == null) {
             Log.i(TAG, "onStartCommand:g == null:startID:" + Integer.toString(startId));
@@ -246,7 +247,7 @@ public class BackEndService extends Service {
                     sendIntent.putExtra(COMMAND, REDRAW_TBD);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     Log.i(TAG, "TIME_BEFORE_DISABLE" + intent.getStringExtra(NOW_TIME));
-                    sendBroadCast(sendIntent);
+                    redrawFlag = true;
                     break;
                 case TIME_BEFORE_ENABLE: // カメラ有効無効スイッチが　カメラ有効に操作された
                     tmp = g.parseDateString(intent.getStringExtra(NOW_TIME));
@@ -257,7 +258,7 @@ public class BackEndService extends Service {
                     sendIntent.putExtra(COMMAND, REDRAW_TBE);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
                     Log.i(TAG, "TIME_BEFORE_ENABLE:" + intent.getStringExtra(NOW_TIME));
-                    sendBroadCast(sendIntent);
+                    redrawFlag = true;
                     break;
                 case CB_TIMER: // タイマーのチェックボックスが操作された
                     Log.i(TAG, "CB_TIMER");
@@ -294,7 +295,7 @@ public class BackEndService extends Service {
                     sendIntent.putExtra(COMMAND, REDRAW_TP);
                     sendIntent.putExtra(REQUEST_CODE, requestCode);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(sendIntent);
+                    redrawFlag = true;
                     break;
                 case SW_TIMER: // タイマーの　カメラ有効無効スイッチが操作された
                     Log.i(TAG, "SW_TIMER");
@@ -315,7 +316,7 @@ public class BackEndService extends Service {
                     sendIntent.putExtra(COMMAND, REDRAW_BS);
                     sendIntent.putExtra(REQUEST_CODE, requestCode);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(sendIntent);
+                    redrawFlag = true;
                     break;
                 case DATE_PICK: // ホリデーモードの日付が変更された
                     Log.i(TAG, "DATE_PICK");
@@ -330,7 +331,7 @@ public class BackEndService extends Service {
                     }
                     sendIntent.putExtra(COMMAND, REDRAW_DP);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(sendIntent);
+                    redrawFlag = true;
                     break;
                 case CB_HOLIDAY: // ホリデーモードのチェックボックスが操作された
                     cd = intent.getBooleanExtra(BOOLEAN, false);
@@ -348,14 +349,14 @@ public class BackEndService extends Service {
                     isChanged |= lateTimerActivate();
                     sendIntent.putExtra(COMMAND, REDRAW_CBH);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(sendIntent);
+                    redrawFlag = true;
                     Log.i(TAG, "CB_HOLIDAY:"+Globals.dateToString(g.timeHolidayModeOn ));
                     break;
                 case REDRAW: // 全体のリドロー要求
                     Log.i(TAG, "REDRAW");
                     sendIntent.putExtra(COMMAND, REDRAW);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(sendIntent);
+                    redrawFlag = true;
                     break;
                 case ALARM_RECEIVE: // 通常のタイマーが起動した
                     Log.i(TAG, "ALARM_RECEIVE");
@@ -390,7 +391,7 @@ public class BackEndService extends Service {
                     Log.i(TAG, "alarm redraw broadcast");
                     sendIntent.putExtra(COMMAND, REDRAW);
                     sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                    sendBroadCast(sendIntent);
+                    redrawFlag = true;
                     break;
                 case SCREEN_ON: // インターバルタイマーが起動したとき、および SCREEN_ON になったとき
                     Log.i(TAG, "case SCREEN_ON");
@@ -399,7 +400,7 @@ public class BackEndService extends Service {
                     if (isChanged) {
                         sendIntent.putExtra(COMMAND, REDRAW);
                         sendIntent.setAction(BackEndService.REDRAW_ACTION);
-                        sendBroadCast(sendIntent);
+                        redrawFlag = true;
                     }
                     numOfToasts++;
                     switch (intent.getIntExtra(REQUEST_CODE,1)) {
@@ -428,9 +429,11 @@ public class BackEndService extends Service {
         if (isChanged) {
             Log.i(TAG, "rewriteSettingFile");
             g.rewriteSettingFile(getBaseContext());
+            redrawFlag = true;
         } else {
             Log.i(TAG, "not rewriteSettingFile");
         }
+
         if (screenOnReceiver == null) { // SCREEN_ONを捕まえるレシーバを登録
             //この登録は、サービスを stopSelf させても生きているが、
             // 明にアクティビティを削除する等すると、働かなくなる
@@ -454,6 +457,9 @@ public class BackEndService extends Service {
                 }
             };
             getBaseContext().getApplicationContext().registerReceiver(screenOnReceiver, intentFilter);
+        }
+        if (redrawFlag) {
+            sendBroadCast(sendIntent);
         }
         Log.i(TAG, "stopSelf:sid=" + sid);
         stopSelf();
