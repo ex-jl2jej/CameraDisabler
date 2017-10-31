@@ -17,43 +17,51 @@ public class CameraDisablerLifecycleHandler implements Application.ActivityLifec
     private static int started = 0;
     private static int stopped = 0;
 
+    private void logOutput(String mes) {
+        Log.i(TAG, "====================" + mes + "========================");
+    }
+
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-        Log.i(TAG, "created");
+        logOutput("created");
     }
 
     @Override
     public void onActivityDestroyed(Activity activity) {
-        Log.i(TAG, "destroyed");
+        logOutput("destroyed");
     }
 
     @Override
     public void onActivityResumed(Activity activity) {
         ++resumed;
-        Log.i(TAG, "resumed");
+        logOutput("resumed");
     }
 
     @Override
     public void onActivityPaused(Activity activity ) {
         ++paused;
-        Log.i(TAG, "paused");
+        logOutput("paused");
     }
 
     @Override
     public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
-        Log.i(TAG, "saveInstanceState");
+        logOutput("saveInstanceState");
+    }
+
+    public void onActivityRestoreInstanceState(Activity activity, Bundle outState) {
+        logOutput("resotreInstanceState");
     }
 
     @Override
     public void onActivityStarted(Activity activity) {
         ++started;
-        Log.i(TAG, "started");
+        logOutput("started");
     }
 
     @Override
     public void onActivityStopped(Activity activity) {
         ++stopped;
-        Log.i(TAG, "stopped");
+        logOutput("stopped");
     }
 
     public static boolean isApplicationVisible(){

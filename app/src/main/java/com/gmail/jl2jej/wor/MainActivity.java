@@ -169,20 +169,6 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(intent, 1);
         }
 
-        //一番上の直接操作スイッチをセットする。
-        Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
-        if (devicePolicyManager.getCameraDisabled(tCameraReceiver)) {
-            directSwitch.setChecked(true);
-         } else {
-            directSwitch.setChecked(false);
-        }
-
-        //画面を設定通りにする
-        rewriteView();
-
-        //各ボタン等のリスナー設定
-        directSwitch.setOnCheckedChangeListener(directSwitchListener);
-
         final CheckBox cbTimer1 = (CheckBox)findViewById(R.id.checkBoxTimer1);
         cbTimer1.setOnCheckedChangeListener(
                 new CompoundButton.OnCheckedChangeListener() {
@@ -368,9 +354,6 @@ public class MainActivity extends AppCompatActivity {
                 }
         );
 
-        final CheckBox cbHolidayMode = (CheckBox)findViewById(R.id.checkBoxHolidayMode);
-        cbHolidayMode.setOnCheckedChangeListener(cbHolidayModeListener);
-
         final DatePickerDialog dpdTimer0 = new DatePickerDialog(this,
                 new DatePickerDialog.OnDateSetListener() {
                     @Override
@@ -396,15 +379,38 @@ public class MainActivity extends AppCompatActivity {
                 }
         );
 
+        Log.i(TAG, "onCreate out");
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        Log.i(TAG, "onRestoreInstanceState in");
+        super.onRestoreInstanceState(savedInstanceState);
+        //ファイルを読んだアクティビティ側のGlobals である ag を作っておく。
+        ag = new Globals();
+        ag.readSettingFile(getBaseContext());
+        Log.i(TAG, "onRestoreInstanceState out");
+    }
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        Log.i(TAG, "onPostCreate in");
+        //画面を設定通りにする
+        rewriteView();
+
         //初期化のサービスを動かす
         Intent serviceIntent = new Intent(this, BackEndService.class);
         serviceIntent.putExtra("CALLED", "MainActivity");
         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.START_ACTIVITY);
         startService(serviceIntent);
-
-        Log.i(TAG, "onCreate out");
+        Log.i(TAG, "onPostCreate out");
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+    }
 
     public void rewriteView() {
         if (ag == null) {
@@ -550,12 +556,29 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.i(TAG, "onResume");
+        //各ボタン等のリスナー設定
+        Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
+        directSwitch.setOnCheckedChangeListener(directSwitchListener);
+        final CheckBox cbHolidayMode = (CheckBox)findViewById(R.id.checkBoxHolidayMode);
+        cbHolidayMode.setOnCheckedChangeListener(cbHolidayModeListener);
+
         Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
         serviceIntent.putExtra(BackEndService.REQUEST_CODE, Globals.screenOnCode);
         startService(serviceIntent);
         //ag.readSettingFile(getBaseContext());
         //rewriteView();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.i(TAG, "onPause");
+
+        Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
+        directSwitch.setOnCheckedChangeListener(null);
+        final CheckBox cbHolidayMode = (CheckBox)findViewById(R.id.checkBoxHolidayMode);
+        cbHolidayMode.setOnCheckedChangeListener(null);
     }
 
     @Override
