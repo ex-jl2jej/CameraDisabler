@@ -55,7 +55,7 @@ public class Globals {
     public static final int timerStartIndex = 1;
     public static final int timerEndIndex = 3;
     public static final int dateChange = 0;
-    public static final int numOfIntervalTimer = 100;
+    public static final int codeOfIntervalTimer = 100;
     public static final int screenOnCode = 101;
     public static final int ON_DESTROY = 102;
     protected jejTimer timer[];

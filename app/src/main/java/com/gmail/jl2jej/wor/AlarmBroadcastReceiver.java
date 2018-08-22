@@ -24,6 +24,7 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        Boolean tCameraActive;
         Log.i(TAG, "onReceive in");
         if (intent == null) {
             Log.i(TAG, "*********** intent == null ************");
@@ -34,14 +35,24 @@ public class AlarmBroadcastReceiver extends BroadcastReceiver {
             int requestCode = intent.getIntExtra(BackEndService.REQUEST_CODE, 1);
             Boolean oldCameraDisable = devicePolicyManager.getCameraDisabled(tCameraReceiver);
 
-            if (requestCode != Globals.dateChange && requestCode != Globals.numOfIntervalTimer) {
+            //カメラを有効無効できるようにする
+            tCameraActive = devicePolicyManager.isAdminActive(tCameraReceiver);
+
+            if (tCameraActive == false) {
+                Intent intentCamera = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+                intentCamera.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, tCameraReceiver);
+                //startActivityForResult(intentCamera, 1);
+            }
+
+
+            if (requestCode != Globals.dateChange && requestCode != Globals.codeOfIntervalTimer) {
                 devicePolicyManager.setCameraDisabled(tCameraReceiver, cameraDisable);
             }
 
             Intent serviceIntent = new Intent(context, BackEndService.class);
 
 
-            if (requestCode == Globals.numOfIntervalTimer) {
+            if (requestCode == Globals.codeOfIntervalTimer) {
                 Log.i(TAG, "SCREEN_ON");
                 serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
                 serviceIntent.putExtra(BackEndService.REQUEST_CODE, requestCode);

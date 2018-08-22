@@ -16,4 +16,5 @@
     <string name="timer1">timer 1</string>
     <string name="timer2">timer 2</string>
     <string name="timer3">timer 3</string>
+    <string name="oshirase">このアプリは端末の管理者権限（カメラ機能無効）を使用します</string>
 </resources>

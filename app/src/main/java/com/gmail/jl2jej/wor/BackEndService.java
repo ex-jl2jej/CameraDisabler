@@ -14,7 +14,6 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -66,7 +65,6 @@ public class BackEndService extends Service {
     public static int numOfIntervalTimerOn = 0;
     private static int numOfToasts = 0;
 
-    private Handler handler;
     private static BroadcastReceiver screenOnReceiver = null;
     private int sid;
 
@@ -79,8 +77,7 @@ public class BackEndService extends Service {
         } else {
             Log.i(TAG, "onCreate:g != null");
         }
-
-      }
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -119,10 +116,20 @@ public class BackEndService extends Service {
         int[] order = new int[Globals.timerEndIndex+1]; // タイマーを時刻の順序に実行するための配列
         boolean isChanged = false;
         boolean oldCameraDisabled;
+        boolean tCameraActive;
 
         devicePolicyManager = (DevicePolicyManager)getBaseContext().getSystemService(MainActivity.DEVICE_POLICY_SERVICE);
         tCameraReceiver = new ComponentName(getBaseContext(), CameraReceiver.class);
         oldCameraDisabled = devicePolicyManager.getCameraDisabled(tCameraReceiver);
+
+        //カメラを有効無効できるようにする
+        tCameraActive = devicePolicyManager.isAdminActive(tCameraReceiver);
+
+        if (tCameraActive == false) {
+            Intent intentCamera = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+            intentCamera.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, tCameraReceiver);
+            //startActivityForResult(intentCamera, 1);
+        }
 
         for (int i = 0 ; i <= Globals.timerEndIndex ; i++) { // まずは、番号通りとしておく
             order[i] = i;
@@ -186,14 +193,14 @@ public class BackEndService extends Service {
      * 見逃され、希望した時刻にカメラが無効にできない可能性があるため、
      * １０分
      * ごとに起動されるタイマーを用意する。
-     * requestCode を numOfIntervalTimer == 100 としてアラームを起動
+     * requestCode を codeOfIntervalTimer == 100 としてアラームを起動
      */
     private void intervalTimerSet() {
         final long intervalTimeMillis = 10 * 60 * 1000;
         Intent intent = new Intent(getBaseContext().getApplicationContext(), AlarmBroadcastReceiver.class);
-        intent.putExtra(BackEndService.REQUEST_CODE, Globals.numOfIntervalTimer);
+        intent.putExtra(BackEndService.REQUEST_CODE, Globals.codeOfIntervalTimer);
 
-        PendingIntent sender = PendingIntent.getBroadcast(getBaseContext().getApplicationContext(), Globals.numOfIntervalTimer, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent sender = PendingIntent.getBroadcast(getBaseContext().getApplicationContext(), Globals.codeOfIntervalTimer, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         AlarmManager alarmManager = (AlarmManager)getBaseContext().getSystemService(getBaseContext().ALARM_SERVICE);
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, Calendar.getInstance().getTimeInMillis(), intervalTimeMillis, sender);
@@ -404,7 +411,7 @@ public class BackEndService extends Service {
                     }
                     numOfToasts++;
                     switch (intent.getIntExtra(REQUEST_CODE,1)) {
-                        case Globals.numOfIntervalTimer:
+                        case Globals.codeOfIntervalTimer:
                             numOfIntervalTimerOn++;
                             break;
                         case Globals.screenOnCode:

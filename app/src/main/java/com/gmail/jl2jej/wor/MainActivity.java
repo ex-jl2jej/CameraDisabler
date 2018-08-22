@@ -1,5 +1,8 @@
 package com.gmail.jl2jej.wor;
 
+import android.annotation.SuppressLint;
+import android.app.DialogFragment;
+import android.support.v7.app.AppCompatActivity;
 import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
@@ -7,7 +10,6 @@ import android.app.admin.DevicePolicyManager;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Message;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.content.ComponentName;
@@ -26,8 +28,8 @@ import java.util.Calendar;
 
 import static com.gmail.jl2jej.wor.Globals.dateChange;
 
-//@RequiresApi(api = Build.VERSION_CODES.N)
 public class MainActivity extends AppCompatActivity {
+
     private static final String TAG = "CameraDisable";
     private DevicePolicyManager devicePolicyManager;
     private ComponentName tCameraReceiver;
@@ -36,36 +38,55 @@ public class MainActivity extends AppCompatActivity {
 
     private static Globals ag = null;
 
+    // カメラ機能ON/OFFの直接操作　スイッチのリスナー関数
     private CompoundButton.OnCheckedChangeListener directSwitchListener = new CompoundButton.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked ) {
+            Boolean tCameraActive;
             Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
             Log.i(TAG, "directSwitch changed");
+
+            //カメラを有効無効できるようにする
+            tCameraActive = devicePolicyManager.isAdminActive(tCameraReceiver);
+
+            if (tCameraActive == false) {
+                Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+                intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, tCameraReceiver);
+                startActivityForResult(intent, 1);
+            }
+
             if (isChecked) {
                 devicePolicyManager.setCameraDisabled(tCameraReceiver, true);
-                serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_DISABLE);
+                // 「前回機能OFF時刻」をセットする
+                serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_DISABLE); //コマンドセット
                 Calendar nowTime = Calendar.getInstance();
                 String nt = Globals.dateToString(nowTime);
-                serviceIntent.putExtra(BackEndService.NOW_TIME, nt );
+                serviceIntent.putExtra(BackEndService.NOW_TIME, nt ); // 現在時刻をセット
+                // アクティビティの画面にそれを反映
                 ag.timeBeforeDisable = nowTime;
                 TextView textBeforeDisable = (TextView)findViewById(R.id.textBeforeDisable);
                 textBeforeDisable.setText(nt);
+                //最後にサービスを駆動
                 startService(serviceIntent);
                 Log.i(TAG, "true");
             } else {
                 devicePolicyManager.setCameraDisabled(tCameraReceiver, false);
-                serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_ENABLE);
+                // 「前回機能ON時刻」をセットする
+                serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.TIME_BEFORE_ENABLE); //コマンドセット
                 Calendar nowTime = Calendar.getInstance();
                 String nt = Globals.dateToString(nowTime);
                 ag.timeBeforeEnable = nowTime;
-                serviceIntent.putExtra(BackEndService.NOW_TIME, nt);
+                serviceIntent.putExtra(BackEndService.NOW_TIME, nt); // 現在時刻をセット
+                // アクティビティ画面にそれを反映
                 TextView textBeforeEnable = (TextView) findViewById(R.id.textBeforeEnable);
                 textBeforeEnable.setText(nt);
+                //最後にサービスを駆動
                 startService(serviceIntent);
                 Log.i(TAG, "false");
             }
         }};
 
+    // ホリデーモードのチェックボックスのリスナー関数
     private CompoundButton.OnCheckedChangeListener cbHolidayModeListener = new CompoundButton.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
@@ -74,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "cbHolidayMode Listener");
             ag.timer[dateChange].available = isChecked;
             if (isChecked) {
-                ag.timeHolidayModeOn = nowTime;
+                ag.timeHolidayModeOn = nowTime; //チェックが入ったら現在時刻を画面に反映
             }
             serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_HOLIDAY);
             serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
@@ -93,6 +114,8 @@ public class MainActivity extends AppCompatActivity {
     //    updateHandler <----------- UpdateReceiver
     // updateHandler は、MainActivityの中にあるので、UIをいじることができる。
 
+    // BackEndService が画面を書き換える必要があると考えたとき、このハンドラーを使って画面を書き換える
+    @SuppressLint("HandlerLeak")
     private Handler updateHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -104,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
                 ag = new Globals();
             }
 
-            ag.setGlobalsFromIntent(bundle);
+            ag.setGlobalsFromIntent(bundle); // すべてのデータを msg から受け取る
             switch (bundle.getInt(BackEndService.COMMAND)) {
                 case BackEndService.REDRAW:
                     Log.i(TAG, "updateHandler:rewriteView");
@@ -149,12 +172,11 @@ public class MainActivity extends AppCompatActivity {
         ag = new Globals();
         ag.readSettingFile(getBaseContext());
 
-        //ハンドラーが動くようにする
+        // BackEndService から updateReceiver がREDRAW_ACTIONを受け取ったら、 updateHandler が動くようにする
         updateReceiver = new UpdateReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BackEndService.REDRAW_ACTION);
         registerReceiver(updateReceiver, intentFilter);
-
         updateReceiver.registerHandler(updateHandler);
 
         //カメラを有効無効できるようにする
@@ -164,11 +186,16 @@ public class MainActivity extends AppCompatActivity {
         tCameraActive = devicePolicyManager.isAdminActive(tCameraReceiver);
 
         if (tCameraActive == false) {
-            Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-            intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, tCameraReceiver);
-            startActivityForResult(intent, 1);
+            DialogFragment oshiraseFragment = new PolicyDialogFragment();
+            oshiraseFragment.show(getFragmentManager(), "policy");
+
+//            Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+//            intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, tCameraReceiver);
+//            startActivityForResult(intent, 1);
         }
 
+        ///////////////////////////////////////////////////////////////
+        // ここから画面のボタンなどの設定
         final CheckBox cbTimer1 = (CheckBox)findViewById(R.id.checkBoxTimer1);
         cbTimer1.setOnCheckedChangeListener(
                 new CompoundButton.OnCheckedChangeListener() {
@@ -382,6 +409,7 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "onCreate out");
     }
 
+    // onCreate -> onStart -> onRestoreInstanceState -> onPostCreate -> onResume -> onResumeFragments -> Activity Running
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         Log.i(TAG, "onRestoreInstanceState in");
@@ -392,10 +420,14 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "onRestoreInstanceState out");
     }
 
+
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
+        Boolean tCameraActive;
         super.onPostCreate(savedInstanceState);
         Log.i(TAG, "onPostCreate in");
+
+
         //画面を設定通りにする
         rewriteView();
 
@@ -408,8 +440,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
+    protected void onResume() {
+        super.onResume();
+        Log.i(TAG, "onResume");
+        //各ボタン等のリスナー設定
+        Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
+        directSwitch.setOnCheckedChangeListener(directSwitchListener);
+        final CheckBox cbHolidayMode = (CheckBox)findViewById(R.id.checkBoxHolidayMode);
+        cbHolidayMode.setOnCheckedChangeListener(cbHolidayModeListener);
+
+        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
+        serviceIntent.putExtra(BackEndService.REQUEST_CODE, Globals.screenOnCode);
+        startService(serviceIntent);
+        //ag.readSettingFile(getBaseContext());
+        //rewriteView();
     }
 
     public void rewriteView() {
@@ -552,24 +597,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.i(TAG, "onResume");
-        //各ボタン等のリスナー設定
-        Switch directSwitch = (Switch)findViewById(R.id.directSwitch);
-        directSwitch.setOnCheckedChangeListener(directSwitchListener);
-        final CheckBox cbHolidayMode = (CheckBox)findViewById(R.id.checkBoxHolidayMode);
-        cbHolidayMode.setOnCheckedChangeListener(cbHolidayModeListener);
-
-        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
-        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
-        serviceIntent.putExtra(BackEndService.REQUEST_CODE, Globals.screenOnCode);
-        startService(serviceIntent);
-        //ag.readSettingFile(getBaseContext());
-        //rewriteView();
-    }
-
+    // onCreate -> onStart -> onRestoreInstanceState -> onPostCreate -> onResume -> onResumeFragments -> Activity Running
+    // -> onPause -> onSaveInstanceState -> onStop -> onDestroy
     @Override
     protected void onPause() {
         super.onPause();
@@ -579,6 +608,11 @@ public class MainActivity extends AppCompatActivity {
         directSwitch.setOnCheckedChangeListener(null);
         final CheckBox cbHolidayMode = (CheckBox)findViewById(R.id.checkBoxHolidayMode);
         cbHolidayMode.setOnCheckedChangeListener(null);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
     }
 
     @Override
