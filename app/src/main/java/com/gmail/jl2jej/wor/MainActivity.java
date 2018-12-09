@@ -47,11 +47,11 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "directSwitch changed");
 
             //カメラを有効無効できるようにする
-            tCameraActive = devicePolicyManager.isAdminActive(tCameraReceiver);
+            tCameraActive = devicePolicyManager.isAdminActive(tCameraReceiver); // まずは調べる
 
-            if (tCameraActive == false) {
+            if (tCameraActive == false) {   //　もしできないなら
                 Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-                intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, tCameraReceiver);
+                intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, tCameraReceiver);   // できるように設定する
                 startActivityForResult(intent, 1);
             }
 
@@ -100,6 +100,84 @@ public class MainActivity extends AppCompatActivity {
             serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_HOLIDAY);
             serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
             serviceIntent.putExtra(BackEndService.NOW_TIME, Globals.dateToString(nowTime));
+            startService(serviceIntent);
+        }
+    };
+
+    // タイマーチェックボックスのリスナー関数
+    private CompoundButton.OnCheckedChangeListener cbTimer1Listener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+            Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+            Log.i(TAG, "cbTimer1 Listener");
+            ag.timer[1].available = isChecked;
+            serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
+            serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
+            serviceIntent.putExtra(BackEndService.REQUEST_CODE, 1);
+            serviceIntent.putExtra("CALLED", "CBTIMER1");
+            startService(serviceIntent);
+        }
+    };
+    private CompoundButton.OnCheckedChangeListener cbTimer2Listener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+            Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+            Log.i(TAG, "cbTimer2 Listener");
+            ag.timer[2].available = isChecked;
+            serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
+            serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
+            serviceIntent.putExtra(BackEndService.REQUEST_CODE, 2);
+            startService(serviceIntent);
+        }
+    };
+    private CompoundButton.OnCheckedChangeListener cbTimer3Listener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+            Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+            Log.i(TAG, "cbTimer3 Listener");
+            ag.timer[3].available = isChecked;
+            serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
+            serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
+            serviceIntent.putExtra(BackEndService.REQUEST_CODE, 3);
+            startService(serviceIntent);
+        }
+    };
+
+    //  スイッチのリスナー関数
+    private CompoundButton.OnCheckedChangeListener swTimer1Listener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+            Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+            Log.i(TAG, "swTimer1 Listener");
+            ag.timer[1].cameraDisable = isChecked;
+            serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
+            serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
+            serviceIntent.putExtra(BackEndService.REQUEST_CODE, 1);
+            serviceIntent.putExtra("CALLED", "swTimer1");
+            startService(serviceIntent);
+        }
+    };
+    private CompoundButton.OnCheckedChangeListener swTimer2Listener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+            Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+            Log.i(TAG, "swTimer2 Listener");
+            ag.timer[2].cameraDisable = isChecked;
+            serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
+            serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
+            serviceIntent.putExtra(BackEndService.REQUEST_CODE, 2);
+            startService(serviceIntent);
+        }
+    };
+    private CompoundButton.OnCheckedChangeListener swTimer3Listener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+            Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
+            Log.i(TAG, "swTimer3 Listener");
+            ag.timer[3].cameraDisable = isChecked;
+            serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
+            serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
+            serviceIntent.putExtra(BackEndService.REQUEST_CODE, 3);
             startService(serviceIntent);
         }
     };
@@ -161,6 +239,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Boolean tCameraActive;
@@ -188,118 +267,10 @@ public class MainActivity extends AppCompatActivity {
         if (tCameraActive == false) {
             DialogFragment oshiraseFragment = new PolicyDialogFragment();
             oshiraseFragment.show(getFragmentManager(), "policy");
-
-//            Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-//            intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, tCameraReceiver);
-//            startActivityForResult(intent, 1);
         }
 
         ///////////////////////////////////////////////////////////////
         // ここから画面のボタンなどの設定
-        final CheckBox cbTimer1 = (CheckBox)findViewById(R.id.checkBoxTimer1);
-        cbTimer1.setOnCheckedChangeListener(
-                new CompoundButton.OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
-                        Log.i(TAG, "cbTimer1 Listener");
-                        ag.timer[1].available = isChecked;
-                        cbTimer1.setChecked(isChecked);
-                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
-                        serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
-                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 1);
-                        serviceIntent.putExtra("CALLED", "CBTIMER1");
-                        startService(serviceIntent);
-                      }
-                }
-        );
-
-        final CheckBox cbTimer2 = (CheckBox)findViewById(R.id.checkBoxTimer2);
-        cbTimer2.setOnCheckedChangeListener(
-                new CompoundButton.OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
-                        Log.i(TAG, "cbTimer2 Listener");
-                        ag.timer[2].available = isChecked;
-                        cbTimer2.setChecked(isChecked);
-                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
-                        serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
-                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 2);
-                        startService(serviceIntent);
-                    }
-                }
-        );
-        final CheckBox cbTimer3 = (CheckBox)findViewById(R.id.checkBoxTimer3);
-        cbTimer3.setOnCheckedChangeListener(
-                new CompoundButton.OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
-                        Log.i(TAG, "cbTimer3 Listener");
-                        cbTimer3.setChecked(isChecked);
-                        ag.timer[3].available = isChecked;
-                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.CB_TIMER);
-                        serviceIntent.putExtra(BackEndService.BOOLEAN, isChecked);
-                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 3);
-                        startService(serviceIntent);
-                    }
-                }
-        );
-
-
-        final Switch swTimer1 = (Switch)findViewById(R.id.changeSwitch1);
-        swTimer1.setOnCheckedChangeListener(
-                new CompoundButton.OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
-                        Log.i(TAG, "swTimer1 Listener");
-                        ag.timer[1].cameraDisable = isChecked;
-                        swTimer1.setChecked(isChecked);
-                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
-                        serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
-                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 1);
-                        serviceIntent.putExtra("CALLED", "swTimer1");
-                        startService(serviceIntent);
-                    }
-                }
-        );
-
-        final Switch swTimer2 = (Switch)findViewById(R.id.changeSwitch2);
-        swTimer2.setOnCheckedChangeListener(
-                new CompoundButton.OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
-                        Log.i(TAG, "swTimer2 Listener");
-                        ag.timer[2].cameraDisable = isChecked;
-                        swTimer2.setChecked(isChecked);
-                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
-                        serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
-                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 2);
-                        startService(serviceIntent);
-                    }
-                }
-        );
-
-        final Switch swTimer3 = (Switch)findViewById(R.id.changeSwitch3);
-        swTimer3.setOnCheckedChangeListener(
-                new CompoundButton.OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                        Intent serviceIntent = new Intent(getBaseContext(), BackEndService.class);
-                        Log.i(TAG, "swTimer3 Listener");
-                        ag.timer[3].cameraDisable = isChecked;
-                        swTimer3.setChecked(isChecked);
-                        serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SW_TIMER);
-                        serviceIntent.putExtra(BackEndService.CAMERA_DISABLE, isChecked);
-                        serviceIntent.putExtra(BackEndService.REQUEST_CODE, 3);
-                        startService(serviceIntent);
-                    }
-                }
-        );
-
         final TimePickerDialog tpdTimer1 = new TimePickerDialog(this,
                 new TimePickerDialog.OnTimeSetListener() {
                     @Override
@@ -453,9 +424,8 @@ public class MainActivity extends AppCompatActivity {
         serviceIntent.putExtra(BackEndService.COMMAND, BackEndService.SCREEN_ON);
         serviceIntent.putExtra(BackEndService.REQUEST_CODE, Globals.screenOnCode);
         startService(serviceIntent);
-        //ag.readSettingFile(getBaseContext());
-        //rewriteView();
     }
+
 
     public void rewriteView() {
         if (ag == null) {
@@ -491,33 +461,49 @@ public class MainActivity extends AppCompatActivity {
         ((TextView)findViewById(R.id.textAfterTimer3)).setText(Globals.dateToString(ag.timer[3].afterStart));
 
         CheckBox cb = (CheckBox)findViewById(R.id.checkBoxTimer1);
+        cb.setOnCheckedChangeListener(null);
         if (cb.isChecked() != ag.timer[1].available) {
             cb.setChecked(ag.timer[1].available);
         }
+        cb.setOnCheckedChangeListener(cbTimer1Listener);
+
         cb = (CheckBox)findViewById(R.id.checkBoxTimer2);
+        cb.setOnCheckedChangeListener(null);
         if (cb.isChecked() != ag.timer[2].available) {
             cb.setChecked(ag.timer[2].available);
         }
+        cb.setOnCheckedChangeListener(cbTimer2Listener);
+
         cb = (CheckBox)findViewById(R.id.checkBoxTimer3);
+        cb.setOnCheckedChangeListener(null);
         if (cb.isChecked() != ag.timer[3].available) {
             cb.setChecked(ag.timer[3].available);
         }
+        cb.setOnCheckedChangeListener(cbTimer3Listener);
 
         Switch sw = (Switch)findViewById(R.id.changeSwitch1);
+        sw.setOnCheckedChangeListener(null);
         if (sw.isChecked() != ag.timer[1].cameraDisable) {
             Log.i(TAG, "swTimer1 different");
             sw.setChecked(ag.timer[1].cameraDisable);
         }
+        sw.setOnCheckedChangeListener(swTimer1Listener);
+
         sw = (Switch)findViewById(R.id.changeSwitch2);
+        sw.setOnCheckedChangeListener(null);
         if (sw.isChecked() != ag.timer[2].cameraDisable) {
             Log.i(TAG, "swTimer2 different");
             sw.setChecked(ag.timer[2].cameraDisable);
         }
+        sw.setOnCheckedChangeListener(swTimer2Listener);
+
         sw = (Switch)findViewById(R.id.changeSwitch3);
+        sw.setOnCheckedChangeListener(null);
         if (sw.isChecked() != ag.timer[3].cameraDisable) {
             Log.i(TAG, "swTimer3 different");
             sw.setChecked(ag.timer[3].cameraDisable);
         }
+        sw.setOnCheckedChangeListener(swTimer3Listener);
 
         cb = (CheckBox)findViewById(R.id.checkBoxHolidayMode);
         cb.setOnCheckedChangeListener(null);
