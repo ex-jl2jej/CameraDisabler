@@ -13,7 +13,6 @@ import android.os.Message;
 import android.os.Bundle;
 import android.os.Handler;
 import android.content.ComponentName;
-import android.text.method.BaseKeyListener;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -22,8 +21,6 @@ import android.widget.Switch;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.TimePicker;
-
-import java.lang.ref.ReferenceQueue;
 import java.util.Calendar;
 
 import static com.gmail.jl2jej.wor.Globals.dateChange;
